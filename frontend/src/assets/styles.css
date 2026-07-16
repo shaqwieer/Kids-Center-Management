@@ -1,0 +1,149 @@
+/* ============================================================================
+   Farfasha design system — tokens + base + shared utilities.
+   Colors/typography/animation ported from the Farfasha design.
+   ============================================================================ */
+:root {
+  /* Brand & state */
+  --brand: #F97A53;
+  --brand-2: #F5A623;
+  --accent: #E85D3D;
+  --accent-hover: #C7472A;
+  --play: #12A594;   /* playing / on-time */
+  --warn: #F59E0B;   /* ending soon */
+  --over: #E5484D;   /* overtime */
+  --purple: #7C5CE0;
+  --pink: #EC6A9C;
+  --blue: #3E97D8;
+  --green: #59B85B;
+
+  /* Ink & surfaces */
+  --ink: #2C2620;
+  --muted: #8A7C6B;
+  --muted-2: #9A8C7A;
+  --muted-3: #A99A86;
+  --muted-strong: #6B5D4C;
+  --bg: #F4EBDC;
+  --surface: #FFFFFF;
+  --surface-2: #FFFDF9;
+  --line: #EEE3D2;
+  --line-2: #EFE6D6;
+  --line-3: #EADFCD;
+  --line-4: #E4D9C8;
+  --line-soft: #F0E7D8;
+  --chip: #F7EFE3;
+
+  /* Radii & shadow */
+  --r-sm: 12px; --r-md: 16px; --r-lg: 20px; --r-xl: 26px;
+  --shadow-card: 0 16px 32px -20px rgba(60, 40, 20, .42);
+  --shadow-pop: 0 20px 40px -24px rgba(60, 40, 20, .40);
+  --shadow-brand: 0 12px 24px -8px rgba(249, 122, 83, .72);
+  --shadow-play: 0 14px 28px -10px rgba(18, 165, 148, .7);
+  --shadow-over: 0 12px 24px -10px rgba(229, 72, 77, .66);
+
+  --font-head: 'Baloo Bhaijaan 2', system-ui, sans-serif;
+  --font-body: 'Tajawal', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 760px at 82% -12%, #FCE7D4 0%, rgba(252,231,212,0) 58%),
+    radial-gradient(1000px 680px at -6% 112%, #DBF1EC 0%, rgba(219,241,236,0) 55%),
+    #F4EBDC;
+  background-attachment: fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+#app { min-height: 100vh; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+button { font-family: var(--font-body); }
+input, textarea, select { font-family: var(--font-body); }
+
+h1, h2, h3, .head { font-family: var(--font-head); }
+
+/* Keyboard focus: visible for keyboard users, invisible to the mouse. */
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.fc-input:focus-visible { outline-offset: 1px; }
+
+/* Respect a reduced-motion preference: keep state changes, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* App chrome never belongs on paper — each view decides what it prints. */
+@media print {
+  .hdr, .toast-host { display: none !important; }
+  body { background: #fff !important; }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #d8c8b0; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Animations (from design) */
+@keyframes fcPop { 0% { transform: scale(.82); opacity: 0; } 60% { transform: scale(1.04); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes fcScreenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes fcToast { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes fcPulseRing { 0%, 100% { box-shadow: 0 0 0 0 rgba(229,72,77,.30); } 50% { box-shadow: 0 0 0 10px rgba(229,72,77,0); } }
+@keyframes fcFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+@keyframes fcSpin { to { transform: rotate(360deg); } }
+
+.screen-in { animation: fcScreenIn .35s ease; }
+
+/* Shared building blocks */
+.fc-card {
+  background: var(--surface);
+  border: 2px solid var(--line-2);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+}
+.fc-input {
+  width: 100%; height: 52px;
+  border: 2px solid var(--line-3);
+  border-radius: 14px;
+  background: #fff;
+  padding: 0 14px;
+  font-size: 15px; color: var(--ink);
+  outline: none;
+  transition: border-color .15s ease;
+}
+.fc-input:focus { border-color: var(--brand); }
+.fc-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; border-radius: var(--r-md);
+  font-weight: 700; font-size: 15px; cursor: pointer;
+  transition: transform .08s ease, filter .15s ease;
+}
+.fc-btn:active { transform: translateY(1px); }
+.fc-btn:disabled { opacity: .45; cursor: not-allowed; }
+.fc-btn-primary { background: var(--brand); color: #fff; box-shadow: var(--shadow-brand); }
+.fc-btn-primary:hover { filter: brightness(1.03); }
+.fc-btn-play { background: var(--play); color: #fff; box-shadow: var(--shadow-play); }
+.fc-btn-ghost { background: #fff; color: var(--ink); border: 2px solid var(--line-4); }
+.fc-btn-ghost:hover { border-color: var(--brand); }
+.fc-btn-danger { background: var(--over); color: #fff; box-shadow: var(--shadow-over); }
+.fc-btn-danger:hover { filter: brightness(1.03); }
+.fc-avatar {
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-family: var(--font-head); font-weight: 700; flex: none;
+}
+.fc-spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line-3); border-top-color: var(--brand); animation: fcSpin .8s linear infinite; }
+
+/* RTL/LTR-aware helpers already handled by dir on <html>; use logical props in styles. */
+.muted { color: var(--muted); }
+.text-ltr { direction: ltr; }

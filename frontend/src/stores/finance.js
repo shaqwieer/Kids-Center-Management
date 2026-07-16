@@ -1,0 +1,14 @@
+import { defineStore } from 'pinia';
+import api from '@/lib/api.js';
+
+export const useFinanceStore = defineStore('finance', {
+  state: () => ({ data: null, period: 'month' }),
+  actions: {
+    async fetch(period = this.period, lang = 'ar') {
+      this.period = period;
+      const { data } = await api.get('/finance/summary', { params: { period, lang } });
+      this.data = data.finance;
+      return data.finance;
+    },
+  },
+});

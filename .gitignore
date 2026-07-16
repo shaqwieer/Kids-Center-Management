@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+npm-debug.log*
+.DS_Store
+coverage/
+.vite/
+*.tsbuildinfo
+backend/uploads/
+
+# Artifacts from the UI proof scripts (screenshots + throwaway Chrome profiles)
+frontend/scripts/shots/
+frontend/scripts/_*/

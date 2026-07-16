@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: farfasha-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PGUSER:-farfasha}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-farfasha}
+      POSTGRES_DB: ${PGDATABASE:-farfasha}
+      TZ: ${TZ:-Asia/Riyadh}
+    ports:
+      - "${PGPORT:-5432}:5432"
+    volumes:
+      - farfasha_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER:-farfasha} -d ${PGDATABASE:-farfasha}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: farfasha-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - farfasha_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: farfasha-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      TZ: ${TZ:-Asia/Riyadh}
+      PGHOST: postgres
+      PGPORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DATABASE_URL: postgres://${PGUSER:-farfasha}:${PGPASSWORD:-farfasha}@postgres:5432/${PGDATABASE:-farfasha}
+      REDIS_URL: redis://redis:6379
+      API_PORT: 4000
+    ports:
+      - "${API_PORT:-4000}:4000"
+    # Run migrations on boot, then start API + inline worker.
+    command: sh -c "npm run migrate && node src/index.js"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Same-origin: nginx proxies /api and /socket.io to the backend.
+        VITE_API_URL: /api
+        VITE_SOCKET_URL: ""
+        VITE_PUBLIC_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+    container_name: farfasha-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+volumes:
+  farfasha_pgdata:
+  farfasha_redisdata:

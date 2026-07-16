@@ -1,0 +1,36 @@
+{
+  "name": "farfasha-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Farfasha Play Center — REST API, Socket.IO realtime, BullMQ scheduled WhatsApp notifications.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "worker": "node src/queue/worker.entry.js",
+    "migrate": "knex --knexfile knexfile.cjs migrate:latest",
+    "migrate:rollback": "knex --knexfile knexfile.cjs migrate:rollback",
+    "seed": "knex --knexfile knexfile.cjs seed:run",
+    "db:reset": "knex --knexfile knexfile.cjs migrate:rollback --all && knex --knexfile knexfile.cjs migrate:latest && knex --knexfile knexfile.cjs seed:run",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "bullmq": "^5.34.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.2",
+    "jsonwebtoken": "^9.0.2",
+    "knex": "^3.1.0",
+    "luxon": "^3.5.0",
+    "morgan": "^1.10.0",
+    "nanoid": "^5.0.9",
+    "pg": "^8.13.1",
+    "socket.io": "^4.8.1",
+    "zod": "^3.24.1"
+  }
+}
