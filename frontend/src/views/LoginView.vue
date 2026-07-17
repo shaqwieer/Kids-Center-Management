@@ -77,7 +77,7 @@
           </button>
         </form>
 
-        <div class="demo">
+        <div v-if="isDev" class="demo">
           <div class="demo-head">
             <span class="demo-title">{{ t('login_demo') }}</span>
             <span class="demo-hint">{{ t('login_demo_hint') }}</span>
@@ -117,13 +117,15 @@ const ui = useUiStore();
 const route = useRoute();
 const router = useRouter();
 
+// Demo quick-fill is a DEV-only convenience — never shown in a production build.
+const isDev = import.meta.env.DEV;
 const DEMOS = [
   { role: 'manager', labelKey: 'tm_role_manager', email: 'manager@farfasha.sa', password: 'manager123' },
   { role: 'staff', labelKey: 'tm_role_staff', email: 'staff@farfasha.sa', password: 'staff123' },
 ];
 
-const email = ref('manager@farfasha.sa');
-const password = ref('manager123');
+const email = ref(isDev ? 'manager@farfasha.sa' : '');
+const password = ref(isDev ? 'manager123' : '');
 const showPw = ref(false);
 const loading = ref(false);
 const error = ref('');

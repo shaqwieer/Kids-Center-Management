@@ -9,7 +9,10 @@ services:
       POSTGRES_DB: ${PGDATABASE:-farfasha}
       TZ: ${TZ:-Asia/Riyadh}
     ports:
-      - "${PGPORT:-5432}:5432"
+      - "${PGPORT:-127.0.0.1:5455}:5432"
+    # Defaults bind to 127.0.0.1 on ports chosen to avoid clashes on the shared
+    # host; override via .env (HOST_IP:PORT allowed). Only the frontend is meant
+    # to be reached, and only through the reverse proxy.
     volumes:
       - farfasha_pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,7 +26,7 @@ services:
     container_name: farfasha-redis
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT:-127.0.0.1:6399}:6379"
     volumes:
       - farfasha_redisdata:/data
     healthcheck:
@@ -54,7 +57,7 @@ services:
       REDIS_URL: redis://redis:6379
       API_PORT: 4000
     ports:
-      - "${API_PORT:-4000}:4000"
+      - "${API_PORT:-127.0.0.1:4077}:4000"
     # Run migrations on boot, then start API + inline worker.
     command: sh -c "npm run migrate && node src/index.js"
 
@@ -71,7 +74,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "${FRONTEND_PORT:-5173}:80"
+      - "${FRONTEND_PORT:-127.0.0.1:8090}:80"
 
 volumes:
   farfasha_pgdata:
