@@ -242,7 +242,7 @@ All under `/api`. JWT Bearer required except `/api/auth/login` and `/api/public/
 
 - **Payments**: `backend/src/payments/PaymentProvider.js` defines a `PaymentProvider` interface with Moyasar / HyperPay / Geidea stubs and a `payments_enabled` settings hook, so late-pickup auto-charge can be added without touching the domain. No live gateway is integrated.
 - **Multi-tenant**: schema is tenant-scoped; add a tenant switcher + tenant-aware login to go multi-center.
-- **Finance expenses**: revenue/sessions are computed from real completed sessions; expense categories are clearly-flagged demo placeholders until an expenses module is added.
+- **Finance and expenses**: tenant-scoped expense CRUD, category breakdown, combined transaction ledger, and net profit calculated with real completed-session revenue.
 
 ## 📄 License
 

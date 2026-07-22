@@ -119,6 +119,11 @@ export default {
   fin_revenue: 'إجمالي الإيرادات', fin_expenses: 'إجمالي المصروفات', fin_net: 'صافي الربح', fin_sessions: 'عدد الجلسات', fin_vs: 'مقارنة بالفترة السابقة',
   fin_weekly: 'الإيرادات خلال الأسبوع', fin_rev_break: 'مصادر الإيراد', fin_exp_break: 'المصروفات حسب البند', fin_ledger: 'أحدث الحركات',
   fin_month_label: 'هذا الشهر', fin_placeholder: 'بيانات تجريبية — تُضاف وحدة المصروفات لاحقاً',
+  exp_manage: 'سجل المصروفات', exp_add: 'إضافة مصروف', exp_edit: 'تعديل المصروف', exp_delete: 'حذف المصروف',
+  exp_title: 'البيان', exp_category: 'البند', exp_amount: 'المبلغ', exp_date: 'التاريخ والوقت', exp_notes: 'ملاحظات (اختياري)',
+  exp_empty: 'لا توجد مصروفات في هذه الفترة', exp_created: 'تمت إضافة المصروف', exp_updated: 'تم تحديث المصروف', exp_deleted: 'تم حذف المصروف',
+  exp_delete_q: 'هل تريد حذف المصروف «{title}»؟', fin_period_expenses: 'الفترة المحددة',
+  e_maintenance: 'الصيانة والنظافة', e_other: 'أخرى',
   r_sessions: 'جلسات اللعب', r_late: 'رسوم الوقت الإضافي', r_pkg: 'الباقات والاشتراكات',
   e_salaries: 'رواتب الموظفين', e_rent: 'الإيجار', e_supplies: 'مستلزمات وألعاب', e_utilities: 'كهرباء ومياه', e_marketing: 'التسويق', e_maint: 'صيانة ونظافة',
 

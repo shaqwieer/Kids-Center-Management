@@ -87,10 +87,15 @@ async function main() {
   const notifs = await api('/api/notifications?session_id=' + sess.id, { token });
   assert.equal(notifs.status, 200); pass('GET /notifications returns for a session');
 
-  // FINANCE
+  // EXPENSES + FINANCE ACCOUNTING
+  const expense = await api('/api/expenses', { method: 'POST', token, body: {
+    title: 'Smoke test supplies', category: 'supplies', amount: 123.45, incurred_at: new Date().toISOString(), notes: 'temporary',
+  } });
+  assert.equal(expense.status, 201); pass('manager can create an expense');
   const fin = await api('/api/finance/summary?period=month', { token });
   assert.ok(fin.data.finance.kpis && typeof fin.data.finance.kpis.revenue === 'number'); pass('finance summary returns kpis');
-  assert.ok(fin.data.finance.placeholder.expenses === true); pass('finance flags expenses as placeholder');
+  assert.ok(fin.data.finance.kpis.expenses >= 123.45); pass('finance includes real expenses');
+  assert.ok(fin.data.finance.txns.some((t) => t.id === expense.data.expense.id)); pass('expense appears in accounting ledger');
   assert.equal(fin.data.finance.weekly.length, 7); pass('finance weekly has 7 bars');
 
   // SETTINGS
@@ -104,6 +109,12 @@ async function main() {
   const staffLogin = await api('/api/auth/login', { method: 'POST', body: { email: 'staff@farfasha.sa', password: 'staff123' } });
   const staffPut = await api('/api/settings', { method: 'PUT', token: staffLogin.data.token, body: { tagline: 'x' } });
   assert.equal(staffPut.status, 403); pass('staff role forbidden from PUT /settings (403)');
+  const staffExpense = await api('/api/expenses', { method: 'POST', token: staffLogin.data.token, body: {
+    title: 'Forbidden expense', category: 'other', amount: 1, incurred_at: new Date().toISOString(),
+  } });
+  assert.equal(staffExpense.status, 403); pass('staff role forbidden from creating expenses (403)');
+  const deletedExpense = await api(`/api/expenses/${expense.data.expense.id}`, { method: 'DELETE', token });
+  assert.equal(deletedExpense.status, 204); pass('manager can delete an expense');
 
   // PUBLIC register + duplicate handling
   const reg = await api('/api/public/register', { method: 'POST', body: {

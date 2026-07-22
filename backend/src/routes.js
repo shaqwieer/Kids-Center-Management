@@ -8,6 +8,7 @@ import sessionsRoutes from './modules/sessions/sessions.routes.js';
 import settingsRoutes from './modules/settings/settings.routes.js';
 import financeRoutes from './modules/finance/finance.routes.js';
 import notificationsRoutes from './modules/notifications/notifications.routes.js';
+import expensesRoutes from './modules/expenses/expenses.routes.js';
 
 const api = Router();
 
@@ -21,5 +22,6 @@ api.use('/sessions', sessionsRoutes);
 api.use('/settings', settingsRoutes);
 api.use('/finance', financeRoutes);
 api.use('/notifications', notificationsRoutes);
+api.use('/expenses', expensesRoutes);
 
 export default api;

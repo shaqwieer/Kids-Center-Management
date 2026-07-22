@@ -9,9 +9,10 @@ services:
       POSTGRES_DB: ${PGDATABASE:-farfasha}
       TZ: ${TZ:-Asia/Riyadh}
     ports:
-      - "${PGPORT:-127.0.0.1:5455}:5432"
+      - "${PG_BIND_IP:-127.0.0.1}:${PGPORT:-5455}:5432"
     # Defaults bind to 127.0.0.1 on ports chosen to avoid clashes on the shared
-    # host; override via .env (HOST_IP:PORT allowed). Only the frontend is meant
+    # host; override PG_BIND_IP only when remote database access is intentional.
+    # Only the frontend is meant
     # to be reached, and only through the reverse proxy.
     volumes:
       - farfasha_pgdata:/var/lib/postgresql/data

@@ -140,7 +140,7 @@ On the **Settings** screen an admin can:
 
 ## 9) Finance
 
-The **Finance** screen shows revenue and session counts (computed from real completed sessions), plus a weekly revenue chart. The expenses sections are demo placeholders for now (an expenses module can be added later).
+The **Finance** screen shows real completed-session revenue, recorded expenses, net profit, category breakdowns, and a combined transaction ledger. Managers can add, edit, and delete expense records.
 
 ---
 

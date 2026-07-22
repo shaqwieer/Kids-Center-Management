@@ -119,6 +119,11 @@ export default {
   fin_revenue: 'Total revenue', fin_expenses: 'Total expenses', fin_net: 'Net profit', fin_sessions: 'Sessions', fin_vs: 'vs previous period',
   fin_weekly: 'Revenue this week', fin_rev_break: 'Revenue sources', fin_exp_break: 'Expenses by category', fin_ledger: 'Recent transactions',
   fin_month_label: 'This month', fin_placeholder: 'Demo data — an expenses module will be added later',
+  exp_manage: 'Expense records', exp_add: 'Add expense', exp_edit: 'Edit expense', exp_delete: 'Delete expense',
+  exp_title: 'Description', exp_category: 'Category', exp_amount: 'Amount', exp_date: 'Date and time', exp_notes: 'Notes (optional)',
+  exp_empty: 'No expenses in this period', exp_created: 'Expense added', exp_updated: 'Expense updated', exp_deleted: 'Expense deleted',
+  exp_delete_q: 'Delete the expense "{title}"?', fin_period_expenses: 'Selected period',
+  e_maintenance: 'Maintenance & cleaning', e_other: 'Other',
   r_sessions: 'Play sessions', r_late: 'Overtime fees', r_pkg: 'Packages & memberships',
   e_salaries: 'Staff salaries', e_rent: 'Rent', e_supplies: 'Toys & supplies', e_utilities: 'Electricity & water', e_marketing: 'Marketing', e_maint: 'Maintenance & cleaning',
 
