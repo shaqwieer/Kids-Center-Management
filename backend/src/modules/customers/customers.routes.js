@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../../utils/http.js';
 import { validate } from '../../middleware/validate.js';
-import { requireAuth } from '../../middleware/auth.js';
+import { requireAuth, requireRole } from '../../middleware/auth.js';
 import {
   searchCustomers, getCustomerDetail, createCustomer, updateCustomer, lookupCustomer,
 } from './customers.service.js';
@@ -16,6 +16,8 @@ const childSchema = z.object({
   age: z.union([z.number(), z.string()]).optional().nullable(),
   gender: z.enum(['m', 'f']).optional().nullable(),
   birthdate: z.string().optional().nullable(),
+  has_allergy: z.boolean().optional(),
+  allergy_note: z.string().max(500).optional().nullable(),
 });
 
 const createSchema = z.object({
@@ -43,11 +45,13 @@ router.get('/:id', asyncHandler(async (req, res) => {
   res.json({ customer: await getCustomerDetail(req.user.tenantId, req.params.id) });
 }));
 
-router.post('/', validate(createSchema), asyncHandler(async (req, res) => {
+// Reception may search and open customer records (الاطلاع) but not rewrite them —
+// families create and correct their own data through the public QR page.
+router.post('/', requireRole('manager'), validate(createSchema), asyncHandler(async (req, res) => {
   res.status(201).json({ customer: await createCustomer(req.user.tenantId, req.body) });
 }));
 
-router.put('/:id', validate(updateSchema), asyncHandler(async (req, res) => {
+router.put('/:id', requireRole('manager'), validate(updateSchema), asyncHandler(async (req, res) => {
   res.json({ customer: await updateCustomer(req.user.tenantId, req.params.id, req.body) });
 }));
 

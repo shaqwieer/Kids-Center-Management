@@ -49,7 +49,20 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
     baseRevenue += base;
     lateRevenue += late;
   }
-  const revenue = baseRevenue + lateRevenue;
+
+  // The other two income sources: parties and workshops. A booking is counted
+  // once it is confirmed (the slot is committed and the price is frozen).
+  const bookingRows = await db('bookings')
+    .where({ tenant_id: tenantId })
+    .whereIn('status', ['confirmed', 'completed'])
+    .andWhereBetween('starts_at', [start, end])
+    .select('id', 'type', 'amount', 'starts_at', 'guardian_name', 'reference');
+  const partyRevenue = bookingRows.filter((b) => b.type === 'party')
+    .reduce((s, b) => s + Number(b.amount), 0);
+  const workshopRevenue = bookingRows.filter((b) => b.type === 'workshop')
+    .reduce((s, b) => s + Number(b.amount), 0);
+
+  const revenue = baseRevenue + lateRevenue + partyRevenue + workshopRevenue;
 
   // Weekly bars — trailing 7 days ending today (Riyadh).
   const days = trailingWeekDays();
@@ -79,9 +92,18 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
     .select('s.id', 's.duration_minutes', 's.late_fee', 's.ended_at', 'ch.name as child_name');
   const incomeTxns = recent.map((r) => ({
     io: 'in',
+    source: 'play',
     label: r.child_name,
     amount: sessionRevenue(r, durations).total,
     at: r.ended_at,
+    placeholder: false,
+  }));
+  const bookingTxns = bookingRows.slice(0, 8).map((b) => ({
+    io: 'in',
+    source: b.type === 'party' ? 'parties' : 'workshops',
+    label: `${b.guardian_name} · ${b.reference}`,
+    amount: Number(b.amount),
+    at: b.starts_at,
     placeholder: false,
   }));
 
@@ -97,12 +119,13 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
     id: e.id, io: 'out', label: e.title, category: e.category, amount: Number(e.amount),
     at: e.incurred_at, notes: e.notes, placeholder: false,
   }));
-  const txns = [...incomeTxns, ...expenseTxns]
-    .sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 10);
+  const txns = [...incomeTxns, ...bookingTxns, ...expenseTxns]
+    .sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 12);
   const revenueBreakdown = [
     { key: 'r_sessions', amount: baseRevenue, color: '#F97A53' },
     { key: 'r_late', amount: lateRevenue, color: '#F5A623' },
-    { key: 'r_pkg', amount: 0, color: '#12A594' },
+    { key: 'r_parties', amount: partyRevenue, color: '#7C5CE0' },
+    { key: 'r_workshops', amount: workshopRevenue, color: '#12A594' },
   ];
 
   return {
@@ -113,6 +136,7 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
       expenses: expensesTotal,
       net: revenue - expensesTotal,
       sessions: rows.length,
+      bookings: bookingRows.length,
     },
     weekly,
     revenueBreakdown,

@@ -8,6 +8,8 @@ const ALIASES = {
   child: ['{child}', '{الطفل}'],
   minutes: ['{minutes}', '{الدقائق}'],
   code: ['{code}', '{الرمز}'],
+  link: ['{link}', '{الرابط}'],
+  center: ['{center}', '{المركز}'],
 };
 
 /** Replace every placeholder for each provided var. Missing vars are left blank. */
@@ -20,15 +22,35 @@ export function renderTemplate(template, vars = {}) {
   return out;
 }
 
+/**
+ * Drop any LINE that references one of `keys`, before rendering.
+ *
+ * Used when a variable has nothing to put in it: a warn_5 template reading
+ * "تبين تمديد ساعة إضافية؟ اضغطي هنا: {الرابط}" must not be sent with a dangling
+ * "اضغطي هنا:" when self-extension is off or the session predates guest tokens.
+ * Removing the whole sentence is right; leaving a blank placeholder is not.
+ */
+export function stripPlaceholderLines(template, keys = []) {
+  const tokens = keys.flatMap((k) => ALIASES[k] || []);
+  if (!tokens.length) return String(template || '');
+  return String(template || '')
+    .split('\n')
+    .filter((line) => !tokens.some((tok) => line.includes(tok)))
+    .join('\n')
+    .trim();
+}
+
 /** Ordered variables Meta template "body" components expect, per template type. */
 export function orderedVars(templateType, vars = {}) {
   switch (templateType) {
     case 'welcome':
       return [vars.name ?? '', vars.code ?? ''];
     case 'warn_5':
-      return [vars.child ?? ''];
+      return [vars.child ?? '', vars.link ?? ''];
     case 'time_up':
       return [vars.child ?? '', String(vars.minutes ?? '')];
+    case 'review':
+      return [vars.name ?? '', vars.link ?? ''];
     default:
       return Object.values(vars).map((v) => String(v ?? ''));
   }

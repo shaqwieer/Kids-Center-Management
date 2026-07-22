@@ -14,15 +14,59 @@ const DEFAULTS = {
       en: 'Welcome {name}! 🎉 You are registered at Farfasha. Keep your code for next visits: {code}',
     },
     warn_5: {
-      ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في فرفشة 🕐',
-      en: '5 minutes left before {child}\'s play time ends at Farfasha 🕐',
+      ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في فرفشة 🕐\nتبين تمديد ساعة إضافية؟ اضغطي هنا: {الرابط}',
+      en: '5 minutes left before {child}\'s play time ends at Farfasha 🕐\nWant to add another hour? Tap here: {link}',
     },
     time_up: {
       ar: 'انتهى وقت لعب {الطفل}. الوقت الإضافي حتى الآن: {الدقائق} دقيقة.',
       en: '{child}\'s play time is up. Overtime so far: {minutes} minutes.',
     },
+    review: {
+      ar: 'شكراً لزيارتكم {المركز} 💛 ما رأيك في الزيارة؟ وكيف نخدمك بشكل أفضل؟\n{الرابط}',
+      en: 'Thank you for visiting {center} 💛 How was your visit, and how can we serve you better?\n{link}',
+    },
   },
   payments_enabled: false,
+  terms_url: null,
+  booking_config: {
+    party: {
+      enabled: true,
+      base_price: 500,
+      price_per_child: 35,
+      min_children: 5,
+      max_children: 40,
+      duration_minutes: 120,
+      slots: ['12:00', '15:00', '18:00'],
+      lead_hours: 24,
+    },
+    workshop: {
+      enabled: true,
+      base_price: 0,
+      price_per_child: 60,
+      min_children: 1,
+      max_children: 20,
+      duration_minutes: 90,
+      slots: ['10:00', '16:00'],
+      lead_hours: 24,
+    },
+    themes: [
+      { key: 'princess', ar: 'أميرات', en: 'Princess' },
+      { key: 'superhero', ar: 'أبطال خارقون', en: 'Superheroes' },
+      { key: 'jungle', ar: 'أدغال', en: 'Jungle' },
+      { key: 'space', ar: 'فضاء', en: 'Space' },
+      { key: 'candy', ar: 'حلويات', en: 'Candy' },
+    ],
+    foods: [
+      { key: 'none', ar: 'بدون ضيافة', en: 'No catering', price_per_child: 0 },
+      { key: 'light', ar: 'ضيافة خفيفة', en: 'Light snacks', price_per_child: 15 },
+      { key: 'full', ar: 'بوفيه كامل', en: 'Full buffet', price_per_child: 45 },
+      { key: 'cake_only', ar: 'كيكة فقط', en: 'Cake only', price_per_child: 10 },
+    ],
+  },
+  reviews_enabled: true,
+  review_delay_minutes: 45,
+  guardian_extend_enabled: true,
+  guardian_extend_minutes: 60,
 };
 
 export async function ensureSettings(tenantId) {
@@ -38,6 +82,7 @@ export async function ensureSettings(tenantId) {
     currency: DEFAULTS.currency,
     wa_templates: JSON.stringify(DEFAULTS.wa_templates),
     payments_enabled: DEFAULTS.payments_enabled,
+    booking_config: JSON.stringify(DEFAULTS.booking_config),
   });
   return db('settings').where({ tenant_id: tenantId }).first();
 }
@@ -56,6 +101,12 @@ export async function updateSettings(tenantId, patch) {
   if (patch.currency !== undefined) update.currency = patch.currency;
   if (patch.wa_templates !== undefined) update.wa_templates = JSON.stringify(patch.wa_templates);
   if (patch.payments_enabled !== undefined) update.payments_enabled = patch.payments_enabled;
+  if (patch.terms_url !== undefined) update.terms_url = patch.terms_url || null;
+  if (patch.booking_config !== undefined) update.booking_config = JSON.stringify(patch.booking_config);
+  if (patch.reviews_enabled !== undefined) update.reviews_enabled = patch.reviews_enabled;
+  if (patch.review_delay_minutes !== undefined) update.review_delay_minutes = patch.review_delay_minutes;
+  if (patch.guardian_extend_enabled !== undefined) update.guardian_extend_enabled = patch.guardian_extend_enabled;
+  if (patch.guardian_extend_minutes !== undefined) update.guardian_extend_minutes = patch.guardian_extend_minutes;
 
   await ensureSettings(tenantId);
   await db('settings').where({ tenant_id: tenantId }).update(update);

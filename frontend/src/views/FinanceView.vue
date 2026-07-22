@@ -24,9 +24,9 @@
               @click="load(p.key)"
             >{{ t(p.label) }}</button>
           </div>
-          <button type="button" class="fc-btn fc-btn-ghost fin-export" @click="onExport">
+          <button type="button" class="fc-btn fc-btn-ghost fin-export" :disabled="exporting" @click="onExport">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#12A594" stroke-width="2.2"><path d="M12 3v12M8 11l4 4 4-4M4 21h16"/></svg>
-            {{ t('fin_export') }}
+            {{ exporting ? t('xl_exporting') : t('xl_export') }}
           </button>
         </div>
       </div>
@@ -221,16 +221,19 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useFinanceStore } from '@/stores/finance.js';
+import { useInsightsStore } from '@/stores/insights.js';
 import { useUiStore } from '@/stores/ui.js';
 import { useAuthStore } from '@/stores/auth.js';
 import { money, formatDate } from '@/lib/time.js';
 
 const { t } = useI18n();
 const finance = useFinanceStore();
+const insights = useInsightsStore();
 const ui = useUiStore();
 const auth = useAuthStore();
 
 const loading = ref(false);
+const exporting = ref(false);
 const savingExpense = ref(false);
 const expenseForm = ref(null);
 const expenseCategories = ['salaries', 'rent', 'supplies', 'utilities', 'marketing', 'maintenance', 'other'];
@@ -308,8 +311,18 @@ async function removeExpense(item) {
     ui.toast(t('exp_deleted'), 'success');
   } catch { ui.toast(t('error_generic'), 'error'); }
 }
-function onExport() {
-  ui.toast(t('co_future'), 'info');
+/** Downloads a real .xlsx for the period currently shown. */
+async function onExport() {
+  if (exporting.value) return;
+  exporting.value = true;
+  try {
+    await insights.exportExcel({ type: 'full', period: finance.period, lang: ui.locale });
+    ui.toast(t('xl_done'), 'success');
+  } catch {
+    ui.toast(t('error_generic'), 'error');
+  } finally {
+    exporting.value = false;
+  }
 }
 
 onMounted(() => load('month'));
@@ -320,7 +333,7 @@ watch(() => ui.locale, () => load(finance.period));
 
 <style scoped>
 .fin-wrap { padding: 22px 28px 40px; }
-.fin-inner { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.fin-inner { width: 100%; display: flex; flex-direction: column; gap: 16px; }
 
 /* Header */
 .fin-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -365,11 +378,13 @@ watch(() => ui.locale, () => load(finance.period));
 .fin-bars { display: flex; align-items: stretch; gap: 10px; height: 170px; }
 .fin-bar-col { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; }
 .fin-bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; justify-content: center; min-height: 0; }
-.fin-bar { width: 62%; min-height: 6px; border-radius: 9px 9px 0 0; transition: height .3s ease; }
+/* Capped: at full-bleed 62% of a 1/7th column is a ~155px slab, which reads as
+   a block of colour rather than a bar. */
+.fin-bar { width: 62%; max-width: 64px; min-height: 6px; border-radius: 9px 9px 0 0; transition: height .3s ease; }
 .fin-bar-lbl { font-size: 11.5px; color: var(--muted-3); font-weight: 700; margin-top: 8px; }
 
 /* Breakdown */
-.fin-breakdowns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.fin-breakdowns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: start; }
 .fin-row { margin-bottom: 14px; }
 .fin-row:last-child { margin-bottom: 0; }
 .fin-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; }

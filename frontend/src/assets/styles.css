@@ -147,3 +147,69 @@ h1, h2, h3, .head { font-family: var(--font-head); }
 /* RTL/LTR-aware helpers already handled by dir on <html>; use logical props in styles. */
 .muted { color: var(--muted); }
 .text-ltr { direction: ltr; }
+
+/* ============================================================================
+   Public-page kit (register / book / review / extend).
+   These pages are opened on a mother's phone from a QR poster or a WhatsApp
+   link, so they are designed mobile-FIRST and widen on bigger screens — the
+   opposite of the staff screens, which start at desktop.
+   ============================================================================ */
+.pub-root { min-height: 100vh; min-height: 100dvh; position: relative; padding: 0 0 32px; }
+.pub-shell { width: 100%; max-width: 560px; margin: 0 auto; padding: 76px 16px 0; }
+.pub-shell.wide { max-width: 860px; }
+.pub-card {
+  background: var(--surface);
+  border: 2px solid var(--line-2);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-card);
+}
+.pub-pad { padding: 26px 20px; }
+.pub-center { display: flex; align-items: center; justify-content: center; min-height: 40vh; }
+.pub-foot { text-align: center; color: var(--muted-3); font-size: 12.5px; margin-top: 20px; }
+.center { text-align: center; }
+
+.pub-area {
+  width: 100%; min-height: 96px; resize: vertical;
+  border: 2px solid var(--line-3); border-radius: 14px;
+  background: #fff; padding: 12px 14px;
+  font-family: var(--font-body); font-size: 15px; color: var(--ink);
+  outline: none; transition: border-color .15s ease;
+}
+.pub-area:focus { border-color: var(--brand); }
+
+.badge-ok {
+  width: 72px; height: 72px; border-radius: 50%; background: var(--play);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-play); animation: fcPop .4s ease; margin: 0 auto;
+}
+
+/* Language toggle floats clear of the content on every public page. */
+.lang-fab {
+  position: absolute; top: 16px; inset-inline-end: 16px; z-index: 5;
+  height: 40px; min-width: 44px; padding: 0 15px;
+  border: 2px solid var(--line-4); background: #fff; border-radius: 12px;
+  color: var(--ink); font-family: var(--font-body); font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.lang-fab:hover { border-color: var(--brand); }
+
+/* ---------------------------------------------------------------------------
+   Mobile. Phones were the reported problem, so layouts are fixed at the source
+   rather than papered over: NO `overflow-x: hidden` on html/body here. That
+   would clamp documentElement.scrollWidth and blind `responsive-proof.mjs`,
+   turning a real sideways-scroll bug into a silently passing test.
+   --------------------------------------------------------------------------- */
+@media (max-width: 620px) {
+  /* iOS zooms the whole page when a focused input is under 16px. That zoom is
+     what makes a form "not open properly" on a phone — it never zooms back. */
+  .fc-input, .pub-area, input, textarea, select { font-size: 16px; }
+  .fc-input { height: 50px; }
+
+  /* Nothing on a phone should be able to out-run the viewport. */
+  .fc-card, .pub-card { border-radius: var(--r-lg); }
+  h1, h2, h3 { overflow-wrap: anywhere; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* Anything genuinely wide (ledgers, calendars, charts) scrolls inside itself
+   instead of widening the page. */
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }

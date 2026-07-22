@@ -127,7 +127,111 @@ export default {
   r_sessions: 'Play sessions', r_late: 'Overtime fees', r_pkg: 'Packages & memberships',
   e_salaries: 'Staff salaries', e_rent: 'Rent', e_supplies: 'Toys & supplies', e_utilities: 'Electricity & water', e_marketing: 'Marketing', e_maint: 'Maintenance & cleaning',
 
+  // Children — allergies & birthdate
+  rg_birthdate: 'Date of birth', rg_gender: 'Gender',
+  rg_allergy_q: 'Any allergies?', rg_allergy_yes: 'Yes', rg_allergy_no: 'No',
+  rg_allergy_note: 'Please describe the allergy', rg_allergy_note_ph: 'e.g. nuts, dairy',
+  rg_allergy_hint: 'Staff see this the moment play starts',
+  rg_terms_link: 'Read the centre terms',
+  allergy_badge: 'Allergy', allergy_none: 'No allergies',
+  age_from_birth: 'Age',
+
+  // Bookings — parties & workshops
+  nav_bookings: 'Bookings', nav_insights: 'Insights',
+  bk_title: 'Party & workshop bookings', bk_sub: 'Calendar and upcoming bookings',
+  bk_party: 'Party', bk_workshop: 'Workshop', bk_type: 'Booking type',
+  bk_new: 'New booking', bk_date: 'Date', bk_time: 'Time', bk_slot: 'Slot',
+  bk_children: 'Children', bk_theme: 'Theme', bk_food: 'Catering',
+  bk_guardian: 'Guardian name', bk_phone: 'Phone', bk_notes: 'Notes',
+  bk_reference: 'Reference', bk_amount: 'Amount', bk_paid: 'Paid',
+  bk_status: 'Status', bk_payment: 'Payment',
+  bk_st_pending: 'Awaiting confirmation', bk_st_confirmed: 'Confirmed', bk_st_cancelled: 'Cancelled', bk_st_completed: 'Completed',
+  bk_pay_unpaid: 'Unpaid', bk_pay_partial: 'Part paid', bk_pay_paid: 'Paid', bk_pay_refunded: 'Refunded',
+  bk_confirm: 'Confirm booking', bk_cancel: 'Cancel booking', bk_mark_paid: 'Mark as paid',
+  bk_empty: 'No bookings in this period',
+  bk_available: 'Available', bk_taken: 'Booked', bk_too_soon: 'Too soon',
+  bk_pick_slot: 'Pick a time', bk_no_slots: 'No times available on this day',
+  bk_created: 'Booking created', bk_updated: 'Booking updated',
+  bk_conflict: 'That slot was just taken — please pick another time',
+  bk_upcoming: 'Upcoming bookings', bk_link: 'Customer booking link', bk_copy: 'Copy link', bk_copied: 'Link copied',
+  bk_qr_hint: 'Share this link or QR code so customers can book themselves',
+
+  // Public booking page
+  pb_title: 'Book your party at Farfasha', pb_sub: 'Pick a date and time — we handle the rest',
+  pb_step_type: 'Occasion', pb_step_when: 'Date & time', pb_step_details: 'Details', pb_step_confirm: 'Confirm',
+  pb_pick_date: 'Choose a date', pb_your_info: 'Your details',
+  pb_price_base: 'Base price', pb_price_children: 'Per-child fee', pb_price_food: 'Catering',
+  pb_total: 'Total', pb_per_child: 'per child',
+  pb_consent: 'I agree to the booking terms and centre policy',
+  pb_submit: 'Confirm booking', pb_duration: 'Duration',
+  pb_done_title: 'Your booking is in!', pb_done_sub: 'We will call you to finalise the details',
+  pb_pay_note: 'Payment is collected at the centre', pb_ref_label: 'Your reference',
+  pb_children_range: 'Between {min} and {max} children',
+  pb_new_booking: 'Make another booking', pb_closed: 'Online booking is currently unavailable',
+  pb_month_prev: 'Previous month', pb_month_next: 'Next month',
+
+  // Guardian self-extend (from the WhatsApp warning)
+  gx_title: 'Play time is almost up', gx_child: 'Child',
+  gx_remaining: 'Time left', gx_ended: 'Time is up',
+  gx_add: 'Add {minutes} more minutes', gx_add_hour: 'Add another hour',
+  gx_price_note: 'Extension fee: {price} {currency} — payable at pickup',
+  gx_done: 'Extended!', gx_done_sub: 'New finish time',
+  gx_completed: 'This visit has already ended', gx_disabled: 'Self-extension is currently unavailable',
+  gx_already: 'You have added {minutes} minutes so far',
+
+  // Post-visit review
+  rv_title: 'How was your visit?', rv_sub: 'Your feedback helps us serve you better',
+  rv_for_child: "{child}'s visit",
+  rv_1: 'Poor', rv_2: 'Fair', rv_3: 'Good', rv_4: 'Great', rv_5: 'Excellent',
+  rv_comment: 'How can we serve you better?', rv_comment_ph: 'Write your notes here (optional)',
+  rv_submit: 'Send feedback', rv_thanks: 'Thank you!', rv_thanks_sub: 'We received your feedback and appreciate your time',
+  rv_already: 'You already reviewed this visit', rv_pick: 'Pick a rating',
+  rv_summary: 'Customer reviews', rv_average: 'Average rating', rv_responses: 'Responses',
+  rv_rate: 'Response rate', rv_recent: 'Recent comments', rv_none: 'No reviews yet',
+
+  // Insights dashboard
+  in_title: 'Insights', in_sub: 'The numbers that matter',
+  in_busiest_day: 'Busiest day', in_busiest_hour: 'Busiest hour',
+  in_by_weekday: 'Traffic by day', in_by_hour: 'Traffic by hour',
+  in_visits: 'visits', in_avg_duration: 'Average session', in_avg_played: 'Average actual play',
+  in_new_customers: 'New customers', in_active_customers: 'Active customers', in_repeat: 'Repeat rate',
+  in_children_total: 'Children on file', in_allergy: 'With allergies',
+  in_income_sources: 'Income sources', in_src_play: 'Play time', in_src_parties: 'Parties', in_src_workshops: 'Workshops',
+  in_duration_mix: 'Most-booked durations', in_gender: 'Children split', in_ages: 'Age groups',
+  in_trend: 'Monthly revenue trend', in_growth: 'Growth vs last month',
+  in_lookback: 'Last {days} days', in_no_data: 'Not enough data yet',
+  in_yrs_band: '{from}–{to} yrs',
+
+  // Excel export
+  xl_export: 'Export to Excel', xl_exporting: 'Preparing…', xl_done: 'File downloaded',
+  xl_pick: 'Choose a report', xl_full: 'Full report', xl_sessions: 'Visits', xl_customers: 'Customers & children',
+  xl_bookings: 'Parties & workshops', xl_expenses: 'Expenses', xl_reviews: 'Reviews',
+  xl_hint: 'Covers the period selected above',
+
+  // Settings — new sections
+  se_terms: 'Centre terms', se_terms_url: 'Terms page URL',
+  se_terms_hint: 'Shown as a link inside the consent statement before registering or booking',
+  se_bookings: 'Party & workshop settings',
+  se_bk_enabled: 'Allow online booking', se_bk_base: 'Base price', se_bk_per_child: 'Price per child',
+  se_bk_min: 'Minimum children', se_bk_max: 'Maximum children', se_bk_duration: 'Duration (min)',
+  se_bk_slots: 'Available slots', se_bk_slots_hint: '24-hour times, comma separated — e.g. 12:00, 15:00',
+  se_bk_lead: 'Minimum notice (hours)',
+  se_bk_themes: 'Available themes', se_bk_foods: 'Catering options',
+  se_reviews: 'Visit reviews', se_reviews_on: 'Send a review link after each visit',
+  se_review_delay: 'Minutes after the visit ends',
+  se_extend: 'Guardian self-extension', se_extend_on: 'Let guardians extend from their link',
+  se_extend_minutes: 'Extension length (min)',
+  se_wa_review: 'Review request message',
+  se_add: 'Add', se_remove: 'Remove',
+
+  // Roles
+  tm_role_reception: 'Receptionist',
+  tm_role_reception_hint: 'Start and extend play, and view — no finance or settings',
+  role_denied: 'This page is for managers only',
+
   // Common
   loading: 'Loading…', error_generic: 'Something went wrong', retry: 'Retry', close: 'Close',
-  live: 'Live', offline: 'Offline',
+  live: 'Live', offline: 'Offline', save: 'Save', cancel: 'Cancel', confirm: 'Confirm',
+  back: 'Back', next: 'Next', menu: 'Menu', optional: 'Optional',
+  r_parties: 'Parties', r_workshops: 'Workshops',
 };

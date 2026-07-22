@@ -7,10 +7,13 @@
  */
 import { db } from '../../config/db.js';
 import { ApiError } from '../../utils/http.js';
-import { computeEndsAt, computeLate, deriveLiveState, MINUTE_MS } from '../../lib/timing.js';
+import { env } from '../../config/env.js';
+import { computeEndsAt, computeLate, deriveLiveState, priceForDuration, MINUTE_MS } from '../../lib/timing.js';
 import { getSettings } from '../settings/settings.service.js';
 import { emitToTenant } from '../../realtime/emitter.js';
-import { scheduleJobs, removeJobs } from '../../queue/scheduler.js';
+import { scheduleJobs, removeJobs, scheduleReview } from '../../queue/scheduler.js';
+import { makeQrToken } from '../../utils/codes.js';
+import { ensureReviewForSession } from '../reviews/reviews.service.js';
 import {
   getSessionRow, listActiveRows, insertSession, updateSession, toSessionDTO,
 } from './sessions.repo.js';
@@ -73,6 +76,8 @@ export async function startSessions({ tenantId, tenantSlug, userId, customerId, 
       status: 'active',
       started_by: userId,
       schedule_version: 1,
+      // Opaque link the mother taps from her WhatsApp warning to add an hour.
+      guest_token: makeQrToken(),
     });
     // eslint-disable-next-line no-await-in-loop
     await scheduleJobs({ sessionId: row.id, tenantId, tenantSlug, endsAtMs, version: 1, nowMs });
@@ -83,8 +88,13 @@ export async function startSessions({ tenantId, tenantSlug, userId, customerId, 
   return created;
 }
 
-/** Extend a running session; cancels old jobs and reschedules against a new version. */
-export async function addTime({ tenantId, tenantSlug, sessionId, minutes }) {
+/**
+ * Extend a running session; cancels old jobs and reschedules against a new version.
+ * `by` is 'staff' (reception tapped +time) or 'guardian' (the mother used her
+ * WhatsApp link). Guardian minutes are tallied separately so the checkout screen
+ * and the finance ledger can show what she added herself.
+ */
+export async function addTime({ tenantId, tenantSlug, sessionId, minutes, by = 'staff' }) {
   const row = await getSessionRow(sessionId);
   if (!row || row.tenant_id !== tenantId) throw ApiError.notFound('Session not found');
   if (row.status === 'completed') throw ApiError.badRequest('Session already completed');
@@ -100,6 +110,9 @@ export async function addTime({ tenantId, tenantSlug, sessionId, minutes }) {
     ends_at: new Date(newEndsMs),
     schedule_version: newVersion,
     status: newStatus,
+    guardian_added_minutes: by === 'guardian'
+      ? (row.guardian_added_minutes || 0) + Math.round(minutes)
+      : (row.guardian_added_minutes || 0),
   });
 
   await removeJobs(sessionId, row.schedule_version); // best-effort tidy of old version
@@ -135,9 +148,90 @@ export async function endSession({ tenantId, tenantSlug, sessionId }) {
 
   await removeJobs(sessionId, row.schedule_version);
 
+  // Post-visit review: mint the link now (idempotent) and schedule the WhatsApp
+  // ask for later, so she is not messaged while still putting shoes on.
+  const full = await getSettings(tenantId);
+  if (full.reviews_enabled) {
+    try {
+      const review = await ensureReviewForSession(tenantId, sessionId, row.customer_id);
+      await scheduleReview({
+        sessionId,
+        tenantId,
+        tenantSlug,
+        reviewId: review.id,
+        delayMs: Math.max(0, (Number(full.review_delay_minutes) || 0) * MINUTE_MS),
+      });
+    } catch (err) {
+      // A review is a nice-to-have; it must never block a checkout.
+      // eslint-disable-next-line no-console
+      console.error('[sessions] review scheduling failed:', err?.message);
+    }
+  }
+
   const dto = toSessionDTO(updated, settings);
   emitToTenant(tenantSlug, 'session:ended', { id: sessionId, session: dto });
   return dto;
+}
+
+// ---- Guardian self-service (public, token-scoped) ---------------------------
+
+/**
+ * What the mother sees on /x/<guest_token>: her child, the live end time and the
+ * price of one extension. No auth — the token IS the credential, and it only
+ * ever exposes this one session.
+ */
+export async function getGuestSession(token) {
+  const row = await db('sessions as s')
+    .join('children as ch', 'ch.id', 's.child_id')
+    .join('customers as c', 'c.id', 's.customer_id')
+    .where('s.guest_token', token)
+    .select('s.*', 'ch.name as child_name', 'c.full_name as customer_full_name')
+    .first();
+  if (!row) throw ApiError.notFound('Link not found');
+
+  const settings = await getSettings(row.tenant_id);
+  const extendMinutes = Number(settings.guardian_extend_minutes) || 60;
+
+  return {
+    token,
+    center_name: settings.center_name,
+    primary_color: settings.primary_color,
+    currency: settings.currency,
+    child_name: row.child_name,
+    guardian_name: row.customer_full_name,
+    ends_at: row.ends_at instanceof Date ? row.ends_at.toISOString() : row.ends_at,
+    status: row.status,
+    completed: row.status === 'completed',
+    extend_enabled: Boolean(settings.guardian_extend_enabled) && row.status !== 'completed',
+    extend_minutes: extendMinutes,
+    // What the extension will cost, using the same duration price list as reception.
+    extend_price: priceForDuration(settings.durations, extendMinutes),
+    already_added_minutes: row.guardian_added_minutes || 0,
+  };
+}
+
+/** She tapped "add an hour". Server-authoritative: it re-reads and re-schedules. */
+export async function guardianExtend(token) {
+  const row = await db('sessions').where({ guest_token: token }).first();
+  if (!row) throw ApiError.notFound('Link not found');
+  if (row.status === 'completed') throw ApiError.badRequest('This visit has already ended');
+
+  const settings = await getSettings(row.tenant_id);
+  if (!settings.guardian_extend_enabled) throw ApiError.forbidden('Self-extension is turned off');
+
+  const tenant = await db('tenants').where({ id: row.tenant_id }).first();
+  return addTime({
+    tenantId: row.tenant_id,
+    tenantSlug: tenant?.slug,
+    sessionId: row.id,
+    minutes: Number(settings.guardian_extend_minutes) || 60,
+    by: 'guardian',
+  });
+}
+
+/** Absolute URL the WhatsApp warning message links to. */
+export function guestExtendUrl(guestToken) {
+  return `${env.appBaseUrl.replace(/\/$/, '')}/x/${guestToken}`;
 }
 
 // ---- Worker transition helpers (atomic, conditional on current status) -------

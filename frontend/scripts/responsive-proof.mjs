@@ -67,8 +67,15 @@ await send('Runtime.evaluate', {
     localStorage.setItem('farfasha_lang', 'ar'); 'ok'`,
 });
 
-const ROUTES = ['/register', '/', '/team', '/customers', '/settings', '/finance', '/start'];
-const WIDTHS = [390, 768, 1024, 1440];
+const ROUTES = [
+  '/register', '/', '/team', '/customers', '/settings', '/finance', '/start',
+  '/book', '/bookings', '/insights',
+];
+// 360 is the narrowest phone still in real use (Galaxy A-series); if the app
+// survives that, it survives the reported "doesn't open properly on mobiles".
+// The header sheds controls in stages; test just above/below each threshold so
+// a future nav item that breaks one rung is caught rather than "looking fine".
+const WIDTHS = [360, 390, 768, 1024, 1079, 1081, 1149, 1199, 1259, 1339, 1439, 1441, 1920];
 let bad = 0;
 
 for (const width of WIDTHS) {
@@ -84,14 +91,18 @@ for (const width of WIDTHS) {
         const sw = document.documentElement.scrollWidth, iw = window.innerWidth;
         let worst = null;
         if (sw > iw + 1) {
+          // In RTL the overflow runs off the LEFT edge (negative left), so
+          // checking only .right silently reports "overflow via null".
           for (const el of document.querySelectorAll('*')) {
             const b = el.getBoundingClientRect();
-            if (b.right > iw + 1 && b.width > 0) {
-              const cls = typeof el.className === 'string' && el.className.trim()
-                ? '.' + el.className.trim().split(/\\s+/).join('.') : '';
-              worst = el.tagName + cls + ' (right=' + Math.round(b.right) + ')';
-              break;
-            }
+            if (b.width <= 0) continue;
+            const over = b.right > iw + 1 ? 'right=' + Math.round(b.right)
+              : (b.left < -1 ? 'left=' + Math.round(b.left) : null);
+            if (!over) continue;
+            const cls = typeof el.className === 'string' && el.className.trim()
+              ? '.' + el.className.trim().split(/\\s+/).join('.') : '';
+            worst = el.tagName + cls + ' (' + over + ')';
+            break;
           }
         }
         return { sw, iw, worst };

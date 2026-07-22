@@ -135,6 +135,108 @@
             ></button>
           </div>
         </section>
+
+        <!-- 5) Centre terms — the link that sits inside the consent statement -->
+        <section class="fc-card sec">
+          <div class="sec-head">
+            <span class="sec-icon" style="background:#E8F2FB;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3E97D8" stroke-width="2.1">
+                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" />
+              </svg>
+            </span>
+            <div class="sec-title">{{ t('se_terms') }}</div>
+          </div>
+          <div class="sec-hint">{{ t('se_terms_hint') }}</div>
+
+          <label class="field-label first" for="se-terms">{{ t('se_terms_url') }}</label>
+          <input id="se-terms" class="fc-input" dir="ltr" type="url" placeholder="https://…" v-model="form.terms_url" />
+        </section>
+
+        <!-- 6) Parties & workshops -->
+        <section class="fc-card sec">
+          <div class="sec-head">
+            <span class="sec-icon" style="background:#EFEAFB;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C5CE0" stroke-width="2.1">
+                <path d="M4 20l5-13 7 7-12 6zM14 4l1 2M18 3l-.5 2.5M20 8l-2 .5" />
+              </svg>
+            </span>
+            <div class="sec-title">{{ t('se_bookings') }}</div>
+          </div>
+
+          <div v-for="k in ['party', 'workshop']" :key="k" class="bk-block">
+            <div class="bk-block-head">
+              <span class="bk-block-t">{{ k === 'party' ? t('bk_party') : t('bk_workshop') }}</span>
+              <label class="toggle">
+                <input type="checkbox" v-model="form.booking_config[k].enabled" />
+                <span>{{ t('se_bk_enabled') }}</span>
+              </label>
+            </div>
+
+            <div class="grid4">
+              <div>
+                <label class="field-label first">{{ t('se_bk_base') }}</label>
+                <input class="fc-input" type="number" min="0" dir="ltr" v-model.number="form.booking_config[k].base_price" />
+              </div>
+              <div>
+                <label class="field-label first">{{ t('se_bk_per_child') }}</label>
+                <input class="fc-input" type="number" min="0" dir="ltr" v-model.number="form.booking_config[k].price_per_child" />
+              </div>
+              <div>
+                <label class="field-label first">{{ t('se_bk_duration') }}</label>
+                <input class="fc-input" type="number" min="15" step="15" dir="ltr" v-model.number="form.booking_config[k].duration_minutes" />
+              </div>
+              <div>
+                <label class="field-label first">{{ t('se_bk_lead') }}</label>
+                <input class="fc-input" type="number" min="0" dir="ltr" v-model.number="form.booking_config[k].lead_hours" />
+              </div>
+              <div>
+                <label class="field-label first">{{ t('se_bk_min') }}</label>
+                <input class="fc-input" type="number" min="1" dir="ltr" v-model.number="form.booking_config[k].min_children" />
+              </div>
+              <div>
+                <label class="field-label first">{{ t('se_bk_max') }}</label>
+                <input class="fc-input" type="number" min="1" dir="ltr" v-model.number="form.booking_config[k].max_children" />
+              </div>
+            </div>
+
+            <label class="field-label">{{ t('se_bk_slots') }}</label>
+            <input class="fc-input" dir="ltr" placeholder="12:00, 15:00, 18:00" v-model="slotText[k]" />
+            <div class="sec-hint sm">{{ t('se_bk_slots_hint') }}</div>
+          </div>
+        </section>
+
+        <!-- 7) Reviews + guardian self-extension -->
+        <section class="fc-card sec">
+          <div class="sec-head">
+            <span class="sec-icon" style="background:#FDF0DC;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5A623" stroke-width="2.1" stroke-linejoin="round">
+                <path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9z" />
+              </svg>
+            </span>
+            <div class="sec-title">{{ t('se_reviews') }}</div>
+          </div>
+
+          <label class="toggle block">
+            <input type="checkbox" v-model="form.reviews_enabled" />
+            <span>{{ t('se_reviews_on') }}</span>
+          </label>
+          <div v-if="form.reviews_enabled" class="inline-num">
+            <label class="field-label first">{{ t('se_review_delay') }}</label>
+            <input class="fc-input narrow" type="number" min="0" max="10080" dir="ltr" v-model.number="form.review_delay_minutes" />
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="sec-title sm">{{ t('se_extend') }}</div>
+          <label class="toggle block">
+            <input type="checkbox" v-model="form.guardian_extend_enabled" />
+            <span>{{ t('se_extend_on') }}</span>
+          </label>
+          <div v-if="form.guardian_extend_enabled" class="inline-num">
+            <label class="field-label first">{{ t('se_extend_minutes') }}</label>
+            <input class="fc-input narrow" type="number" min="5" max="600" step="5" dir="ltr" v-model.number="form.guardian_extend_minutes" />
+          </div>
+        </section>
       </div>
 
       <!-- Sticky footer -->
@@ -233,9 +335,22 @@ const colors = ['#F97A53', '#12A594', '#7C5CE0', '#EC6A9C', '#F5A623'];
 
 const waGroups = [
   { key: 'welcome', labelKey: 'se_wa_welcome', vars: ['{name}', '{الاسم}', '{code}', '{الرمز}'] },
-  { key: 'warn_5', labelKey: 'se_wa_warning', vars: ['{child}', '{الطفل}'] },
+  // {link} is the mother's one-tap "add an hour" link.
+  { key: 'warn_5', labelKey: 'se_wa_warning', vars: ['{child}', '{الطفل}', '{link}', '{الرابط}'] },
   { key: 'time_up', labelKey: 'se_wa_overtime', vars: ['{child}', '{الطفل}', '{minutes}', '{الدقائق}'] },
+  { key: 'review', labelKey: 'se_wa_review', vars: ['{name}', '{الاسم}', '{center}', '{المركز}', '{link}', '{الرابط}'] },
 ];
+
+/**
+ * Slots live in the model as an array but are far easier to edit as one comma
+ * separated line, so the two are kept in sync around the text field.
+ */
+const slotText = ref({ party: '', workshop: '' });
+const parseSlots = (text) => String(text || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter((s) => /^\d{1,2}:\d{2}$/.test(s))
+  .map((s) => (s.length === 4 ? `0${s}` : s));
 
 function durationLabel(min) {
   if (min === 30) return t('dur30');
@@ -262,6 +377,35 @@ onMounted(async () => {
       welcome: { ar: wt.welcome?.ar ?? '', en: wt.welcome?.en ?? '' },
       warn_5: { ar: wt.warn_5?.ar ?? '', en: wt.warn_5?.en ?? '' },
       time_up: { ar: wt.time_up?.ar ?? '', en: wt.time_up?.en ?? '' },
+      review: { ar: wt.review?.ar ?? '', en: wt.review?.en ?? '' },
+    };
+
+    clone.terms_url = clone.terms_url ?? '';
+    if (clone.reviews_enabled == null) clone.reviews_enabled = true;
+    if (clone.review_delay_minutes == null) clone.review_delay_minutes = 45;
+    if (clone.guardian_extend_enabled == null) clone.guardian_extend_enabled = true;
+    if (clone.guardian_extend_minutes == null) clone.guardian_extend_minutes = 60;
+
+    const bc = clone.booking_config || {};
+    const kind = (k, d) => ({
+      enabled: bc[k]?.enabled ?? true,
+      base_price: Number(bc[k]?.base_price ?? d.base),
+      price_per_child: Number(bc[k]?.price_per_child ?? d.per),
+      min_children: Number(bc[k]?.min_children ?? d.min),
+      max_children: Number(bc[k]?.max_children ?? d.max),
+      duration_minutes: Number(bc[k]?.duration_minutes ?? d.dur),
+      slots: Array.isArray(bc[k]?.slots) ? bc[k].slots : d.slots,
+      lead_hours: Number(bc[k]?.lead_hours ?? 24),
+    });
+    clone.booking_config = {
+      party: kind('party', { base: 500, per: 35, min: 5, max: 40, dur: 120, slots: ['12:00', '15:00', '18:00'] }),
+      workshop: kind('workshop', { base: 0, per: 60, min: 1, max: 20, dur: 90, slots: ['10:00', '16:00'] }),
+      themes: bc.themes || [],
+      foods: bc.foods || [],
+    };
+    slotText.value = {
+      party: clone.booking_config.party.slots.join(', '),
+      workshop: clone.booking_config.workshop.slots.join(', '),
     };
 
     form.value = clone;
@@ -274,6 +418,7 @@ async function save() {
   if (!canSave.value || saving.value || !form.value) return;
   saving.value = true;
   try {
+    const bc = form.value.booking_config;
     await settings.update({
       durations: form.value.durations.map((d) => ({ ...d, price: Number(d.price) })),
       late_fee_per_minute: Number(form.value.late_fee_per_minute),
@@ -281,7 +426,22 @@ async function save() {
       tagline: form.value.tagline,
       primary_color: form.value.primary_color,
       wa_templates: form.value.wa_templates,
+      terms_url: form.value.terms_url?.trim() || null,
+      booking_config: {
+        ...bc,
+        party: { ...bc.party, slots: parseSlots(slotText.value.party) },
+        workshop: { ...bc.workshop, slots: parseSlots(slotText.value.workshop) },
+      },
+      reviews_enabled: form.value.reviews_enabled,
+      review_delay_minutes: Number(form.value.review_delay_minutes),
+      guardian_extend_enabled: form.value.guardian_extend_enabled,
+      guardian_extend_minutes: Number(form.value.guardian_extend_minutes),
     });
+    // Reflect the normalised slot list back into the text field.
+    slotText.value = {
+      party: (settings.data.booking_config?.party?.slots || []).join(', '),
+      workshop: (settings.data.booking_config?.workshop?.slots || []).join(', '),
+    };
     ui.toast(t('se_saved'), 'success');
   } catch (e) {
     ui.toast(t('error_generic'), 'error');
@@ -298,16 +458,25 @@ async function save() {
   flex-direction: column;
   min-height: 0;
 }
+/* Full-bleed, like the dashboard. The sections TILE rather than stretch — a
+   settings form stretched to 1920px is unreadable, so the width buys extra
+   columns instead of extra line length.
+   CSS columns rather than grid: the sections differ wildly in height (the
+   WhatsApp card is ~4x the branding card), and a grid aligns row baselines, so
+   every short card would sit above a tall void. Columns pack by height. Each
+   section is self-contained, so reading down a column is fine. */
 .wrap {
   flex: 1;
   width: 100%;
-  max-width: 760px;
-  margin-inline: auto;
   padding: 22px 28px 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  columns: 460px;
+  column-gap: 18px;
 }
+.wrap > .sec {
+  break-inside: avoid;
+  margin-bottom: 18px;
+}
+.page-head { column-span: all; }
 .page-head {
   display: flex;
   align-items: center;
@@ -356,6 +525,22 @@ async function save() {
   margin-top: 4px;
   margin-bottom: 16px;
 }
+.sec-hint.sm { margin-top: 6px; margin-bottom: 0; }
+.sec-title.sm { font-size: 15px; margin-bottom: 10px; }
+
+/* Bookings + reviews blocks */
+.bk-block { border-top: 1px solid var(--line-soft); padding-top: 16px; margin-top: 16px; }
+.bk-block:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.bk-block-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.bk-block-t { font-family: var(--font-head); font-weight: 800; font-size: 16px; color: var(--ink); }
+.grid4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.toggle { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--muted-strong); }
+.toggle.block { display: flex; margin-bottom: 12px; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--brand); cursor: pointer; flex: none; }
+.inline-num { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.inline-num .field-label { margin: 0; }
+.fc-input.narrow { width: 120px; }
+.divider { height: 1px; background: var(--line-soft); margin: 20px 0; }
 
 /* Durations */
 .dur-list {
@@ -454,9 +639,11 @@ async function save() {
   font-weight: 700;
   margin-bottom: 8px;
 }
+/* The ar/en pair sits side by side when the card is wide and stacks once the
+   card becomes one column of a multi-column settings grid. */
 .wa-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
   gap: 12px;
 }
 .wa-field {
@@ -553,8 +740,6 @@ async function save() {
 }
 .save-inner {
   width: 100%;
-  max-width: 760px;
-  margin-inline: auto;
   padding: 14px 28px;
   display: flex;
   align-items: center;

@@ -9,6 +9,10 @@ import settingsRoutes from './modules/settings/settings.routes.js';
 import financeRoutes from './modules/finance/finance.routes.js';
 import notificationsRoutes from './modules/notifications/notifications.routes.js';
 import expensesRoutes from './modules/expenses/expenses.routes.js';
+import bookingsRoutes from './modules/bookings/bookings.routes.js';
+import reviewsRoutes from './modules/reviews/reviews.routes.js';
+import analyticsRoutes from './modules/analytics/analytics.routes.js';
+import reportsRoutes from './modules/reports/reports.routes.js';
 
 const api = Router();
 
@@ -23,5 +27,9 @@ api.use('/settings', settingsRoutes);
 api.use('/finance', financeRoutes);
 api.use('/notifications', notificationsRoutes);
 api.use('/expenses', expensesRoutes);
+api.use('/bookings', bookingsRoutes);
+api.use('/reviews', reviewsRoutes);
+api.use('/analytics', analyticsRoutes);
+api.use('/reports', reportsRoutes);
 
 export default api;

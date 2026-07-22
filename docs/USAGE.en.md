@@ -32,8 +32,22 @@ Only a manager can do this.
 1. Open **Team** in the top navigation.
 2. Press **Add account**.
 3. Fill in the name, email, and a password of at least 6 characters.
-4. Choose the role — **Manager** for full access, **Staff** for day-to-day work.
+4. Choose the role — **Manager** or **Receptionist**.
 5. Press **Create account**. Your colleague can now sign in with that email and password.
+
+**What's the difference?**
+
+| | Manager | Receptionist |
+|---|---|---|
+| Start / extend / end play | ✅ | ✅ |
+| View customers, children, bookings | ✅ | ✅ (read-only) |
+| Finance, expenses, insights, Excel export | ✅ | ❌ |
+| Add or edit customers & bookings | ✅ | ❌ |
+| Settings, Team | ✅ | ❌ |
+
+A receptionist runs the floor — starts play, adds time, checks out, looks people up —
+while the money side and any edit to records stays with the manager. This is enforced
+by the server itself, not just hidden in the interface.
 
 To change a name, email, password, or role later, press the pencil on their card.
 The trash icon removes the account; the person can no longer sign in, but the
@@ -60,12 +74,16 @@ There are two ways to register a mother and her children:
 
 ### a) Self-registration via the QR poster (no staff needed)
 - A poster at the entrance shows a QR code. Scanning it with a phone opens the **registration page** directly (no login).
-- The mother enters: **full name**, **mobile number**, (national ID is optional), then adds **one or more children** (name, age, boy/girl), and agrees to the terms.
+- The mother enters: **full name**, **mobile number**, (national ID is optional), then adds **one or more children**, and agrees to the terms.
+- For each child she gives: **name**, **date of birth** (the age fills in automatically), **boy/girl**, and **whether the child has any allergy** — answering *Yes* opens a box to describe it.
+- The consent line carries a link to your **centre terms**, so she can read them before agreeing. Set that link under Settings.
+
+> **Allergies are shown where they matter.** A child with a recorded allergy carries a red warning band on their card on the live dashboard the whole time they are playing — staff do not have to go looking for it.
 - On **Create account**, the system generates a short **customer code** (e.g. `FRF-2048`) and a **personal QR card** shown on screen.
 - She taps **Save card** to print it or keep it on her phone for future visits.
 
 ### b) Registration at reception
-- From the header, press **Register** to open the same page and enter the details on the customer's behalf.
+- From the header (or the menu on a phone), press **Register** to open the same page and enter the details on the customer's behalf.
 
 > **Phone already registered?** If the mobile number already exists, the system shows the existing customer's card instead of creating a duplicate.
 
@@ -126,26 +144,89 @@ When a session starts, the system schedules two automatic messages to the guardi
 
 - Messages are sent automatically over WhatsApp, and every send attempt (success or failure) is logged, with automatic retry on failure.
 - **Before the WhatsApp Business account is ready:** the system runs in a sandbox mode that *logs* messages instead of sending them — so everything can be run and tested first. The admin enables real sending later in the server settings.
-- **Message texts** (Arabic and English) are editable on the **Settings** screen, using the variables: `{name}`, `{child}`, `{minutes}`, `{code}`.
+- **Message texts** (Arabic and English) are editable on the **Settings** screen, using the variables: `{name}`, `{child}`, `{minutes}`, `{code}`, `{center}`, `{link}`.
+
+### The mother can add an hour herself
+
+The *5 minutes left* message includes a link. When she taps it she sees her child's
+name, a live countdown, and the price of an extension — one press adds the hour.
+The dashboard updates instantly for reception, and the notifications reschedule
+themselves. The extension fee is collected at pickup like any other charge.
+
+Turn it off, or change the length, under **Settings → Guardian self-extension**.
+
+### After the visit: "How was your visit?"
+
+Shortly after checkout (45 minutes by default) she receives a link asking for a
+1–5 rating and *"how can we serve you better?"*. Each link works once. Managers see
+the average, the star spread, the response rate and the latest comments on the
+**Insights** screen.
 
 ---
 
-## 8) Settings (admin)
+## 8) Party & workshop bookings
 
-On the **Settings** screen an admin can:
-- Edit **play durations and prices**.
+Bookings live on the **Bookings** screen, and customers can book themselves.
+
+- **Share the link.** The Bookings screen shows your public booking link plus a QR
+  code — put it in your bio, a story, or on a printed card.
+- **What she picks:** party or workshop → a date from the calendar → an available
+  time → number of children, theme, and catering. The price updates as she chooses,
+  and she confirms with your terms linked in the consent line.
+- **Two people can never take the same slot.** The database itself refuses the
+  second one, even if both press confirm at the same instant. A taken slot
+  immediately shows as booked for everyone else.
+- **Payment is collected at the centre.** A new booking arrives as *Awaiting
+  confirmation*; a manager presses **Confirm booking**, and **Mark as paid** once
+  settled. Cancelling frees the slot again.
+- Reception can see bookings; creating, confirming and settling them is a manager's job.
+
+Pricing, durations, available times, themes and catering options are all editable
+under **Settings → Party & workshop settings**.
+
+---
+
+## 9) Settings (manager)
+
+On the **Settings** screen a manager can:
+- Edit **play durations and prices**, at any time.
 - Set the **overtime rate** per minute (set it to zero to disable it).
-- Edit the **WhatsApp message templates** (welcome / ending-soon / overtime).
-- Change the **center branding** (name, tagline, primary color).
+- Set the **terms page link** that appears inside the consent statement on the
+  registration and booking forms.
+- Configure **parties and workshops**: base price, price per child, min/max children,
+  duration, available time slots, and how much notice a booking needs.
+- Turn **visit reviews** on/off and choose how long after checkout to ask.
+- Turn **guardian self-extension** on/off and set the extension length.
+- Edit the **WhatsApp message templates** (welcome / ending-soon / overtime / review).
+- Change the **centre branding** (name, tagline, primary colour).
 
-## 9) Finance
+## 10) Finance & Insights (manager only)
 
-The **Finance** screen shows real completed-session revenue, recorded expenses, net profit, category breakdowns, and a combined transaction ledger. Managers can add, edit, and delete expense records.
+**Finance** shows revenue split across your three income sources — play time,
+parties, and workshops — alongside expenses, net profit, and the transaction ledger.
+
+**Insights** answers the operational questions: which day and hour are busiest,
+how traffic spreads across the week, which durations sell, how many customers are
+new vs returning, your children's age and gender mix, and how revenue is trending
+month over month.
+
+### Exporting to Excel
+
+Both screens have an **Export to Excel** button. Choose a report — full, visits,
+customers & children, parties & workshops, expenses, or reviews — and it downloads
+a real `.xlsx` for the selected period, laid out right-to-left in Arabic. The full
+report includes a summary sheet with the headline figures.
+
+Receptionists cannot open Finance, Insights, or the exports — those carry every
+customer phone number and the whole financial picture.
 
 ---
 
 ### Tips
 - The dashboard stays live and in sync across all staff devices simultaneously.
 - Time and notifications are computed on the server, so they don't depend on a device's clock accuracy.
+- **On a phone:** the top navigation becomes a **side drawer**, opened from the ☰ button
+  in the header — it holds every page plus the language switch and Log out. Every screen
+  is built to work cleanly down to a 360px-wide phone.
 
 Enjoy! 🌟

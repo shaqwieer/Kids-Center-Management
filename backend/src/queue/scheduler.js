@@ -11,6 +11,7 @@ import { computeDelays } from '../lib/timing.js';
 
 export const warnJobId = (sessionId, version) => `warn5:${sessionId}:v${version}`;
 export const timeupJobId = (sessionId, version) => `timeup:${sessionId}:v${version}`;
+export const reviewJobId = (sessionId) => `review:${sessionId}`;
 
 /**
  * Enqueue the warn_5 + time_up jobs for the given (already-persisted) version.
@@ -29,6 +30,19 @@ export async function scheduleJobs({ sessionId, tenantId, tenantSlug, endsAtMs, 
     'session-event',
     { ...common, type: 'time_up' },
     { ...DEFAULT_JOB_OPTS, jobId: timeupJobId(sessionId, version), delay: timeup },
+  );
+}
+
+/**
+ * Enqueue the post-visit review ask. No version guard is needed: the job id is
+ * per-session, checkout is idempotent, and BullMQ dedupes a repeated jobId — so
+ * a double checkout can never send her two "rate your visit" messages.
+ */
+export async function scheduleReview({ sessionId, tenantId, tenantSlug, reviewId, delayMs = 0 }) {
+  await sessionQueue.add(
+    'session-event',
+    { type: 'review', sessionId, tenantId, tenantSlug, reviewId },
+    { ...DEFAULT_JOB_OPTS, jobId: reviewJobId(sessionId), delay: Math.max(0, delayMs) },
   );
 }
 

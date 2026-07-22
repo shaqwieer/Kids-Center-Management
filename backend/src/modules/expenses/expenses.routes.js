@@ -6,7 +6,8 @@ import { asyncHandler } from '../../utils/http.js';
 import { EXPENSE_CATEGORIES, createExpense, deleteExpense, listExpenses, updateExpense } from './expenses.service.js';
 
 const router = Router();
-router.use(requireAuth);
+// The whole expense ledger is manager-only, reads included.
+router.use(requireAuth, requireRole('manager'));
 const expenseSchema = z.object({
   title: z.string().trim().min(2).max(160), category: z.enum(EXPENSE_CATEGORIES),
   amount: z.coerce.number().positive().max(9999999999.99), incurred_at: z.coerce.date(),

@@ -19,21 +19,66 @@ const WA_TEMPLATES = {
     ar: 'مرحباً {الاسم}! 🎉 تم تسجيلك في فرفشة. احتفظ برمزك للزيارات القادمة: {الرمز}',
     en: 'Welcome {name}! 🎉 You are registered at Farfasha. Keep your code for next visits: {code}',
   },
+  // {الرابط} is the mother's one-tap "add an hour" page. Dropping it here would
+  // silently disable guardian self-extension on every freshly seeded install —
+  // the worker only sends a link the template asks for.
   warn_5: {
-    ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في فرفشة 🕐',
-    en: "5 minutes left before {child}'s play time ends at Farfasha 🕐",
+    ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في فرفشة 🕐\nتبين تمديد ساعة إضافية؟ اضغطي هنا: {الرابط}',
+    en: "5 minutes left before {child}'s play time ends at Farfasha 🕐\nWant to add another hour? Tap here: {link}",
   },
   time_up: {
     ar: 'انتهى وقت لعب {الطفل}. الوقت الإضافي حتى الآن: {الدقائق} دقيقة.',
     en: "{child}'s play time is up. Overtime so far: {minutes} minutes.",
   },
+  review: {
+    ar: 'شكراً لزيارتكم {المركز} 💛 ما رأيك في الزيارة؟ وكيف نخدمك بشكل أفضل؟\n{الرابط}',
+    en: 'Thank you for visiting {center} 💛 How was your visit, and how can we serve you better?\n{link}',
+  },
+};
+
+// Party & workshop pricing/slots the booking page reads. Kept in step with
+// DEFAULTS in settings.service.js.
+const BOOKING_CONFIG = {
+  party: {
+    enabled: true,
+    base_price: 500,
+    price_per_child: 35,
+    min_children: 5,
+    max_children: 40,
+    duration_minutes: 120,
+    slots: ['12:00', '15:00', '18:00'],
+    lead_hours: 24,
+  },
+  workshop: {
+    enabled: true,
+    base_price: 0,
+    price_per_child: 60,
+    min_children: 1,
+    max_children: 20,
+    duration_minutes: 90,
+    slots: ['10:00', '16:00'],
+    lead_hours: 24,
+  },
+  themes: [
+    { key: 'princess', ar: 'أميرات', en: 'Princess' },
+    { key: 'superhero', ar: 'أبطال خارقون', en: 'Superheroes' },
+    { key: 'jungle', ar: 'أدغال', en: 'Jungle' },
+    { key: 'space', ar: 'فضاء', en: 'Space' },
+    { key: 'candy', ar: 'حلويات', en: 'Candy' },
+  ],
+  foods: [
+    { key: 'none', ar: 'بدون ضيافة', en: 'No catering', price_per_child: 0 },
+    { key: 'light', ar: 'ضيافة خفيفة', en: 'Light snacks', price_per_child: 15 },
+    { key: 'full', ar: 'بوفيه كامل', en: 'Full buffet', price_per_child: 45 },
+    { key: 'cake_only', ar: 'كيكة فقط', en: 'Cake only', price_per_child: 10 },
+  ],
 };
 
 const CUSTOMERS = [
   {
     full_name: 'نورة العتيبي', phone: '0551234567', national_id: '1098000000', code: 'FRF-2048',
     children: [
-      { name: 'عبدالله', gender: 'm', age: 6 },
+      { name: 'عبدالله', gender: 'm', age: 6, allergy: 'حساسية من المكسرات' },
       { name: 'جوري', gender: 'f', age: 4 },
     ],
     visits: [
@@ -92,6 +137,10 @@ function liveStatus(startMs, dur) {
 
 exports.seed = async function seed(knex) {
   await knex('notifications').del();
+  // Explicit, in FK order — reviews reference sessions AND bookings, so relying
+  // on the tenant cascade alone makes the delete order fragile.
+  await knex('reviews').del();
+  await knex('bookings').del();
   await knex('sessions').del();
   await knex('children').del();
   await knex('customers').del();
@@ -128,6 +177,11 @@ exports.seed = async function seed(knex) {
     currency: 'SAR',
     wa_templates: JSON.stringify(WA_TEMPLATES),
     payments_enabled: false,
+    booking_config: JSON.stringify(BOOKING_CONFIG),
+    reviews_enabled: true,
+    review_delay_minutes: 45,
+    guardian_extend_enabled: true,
+    guardian_extend_minutes: 60,
   });
 
   const lateRate = 1.5;
@@ -146,7 +200,16 @@ exports.seed = async function seed(knex) {
     }).returning('*');
     // eslint-disable-next-line no-await-in-loop
     const kids = await knex('children').insert(
-      def.children.map((k) => ({ customer_id: c.id, name: k.name, gender: k.gender, age: k.age })),
+      def.children.map((k) => ({
+        customer_id: c.id,
+        name: k.name,
+        gender: k.gender,
+        age: k.age,
+        // Birthdate is what the form now asks for; age is kept in step.
+        birthdate: k.age != null ? `${new Date().getFullYear() - k.age}-06-15` : null,
+        has_allergy: Boolean(k.allergy),
+        allergy_note: k.allergy || null,
+      })),
     ).returning('*');
     created.push({ def, c, kids });
 
@@ -191,6 +254,8 @@ exports.seed = async function seed(knex) {
       status: liveStatus(startMs, dur),
       started_by: admin.id,
       schedule_version: 0,
+      // Live sessions need a token or their 5-minute warning has no link to offer.
+      guest_token: token(),
     });
   }
 

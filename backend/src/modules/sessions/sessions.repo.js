@@ -6,8 +6,10 @@ const SELECT = [
   's.id', 's.tenant_id', 's.customer_id', 's.child_id',
   's.duration_minutes', 's.started_at', 's.ends_at', 's.ended_at',
   's.status', 's.late_minutes', 's.late_fee', 's.schedule_version', 's.created_at',
+  's.guest_token', 's.guardian_added_minutes',
   'c.full_name as customer_full_name', 'c.phone as customer_phone', 'c.customer_code as customer_code',
   'ch.name as child_name', 'ch.gender as child_gender', 'ch.age as child_age',
+  'ch.has_allergy as child_has_allergy', 'ch.allergy_note as child_allergy_note',
 ];
 
 function baseQuery() {
@@ -61,6 +63,9 @@ export function toSessionDTO(row, settings = null) {
       name: row.child_name,
       gender: row.child_gender,
       age: row.child_age,
+      // Surfaced on the live dashboard card so staff see it without opening anything.
+      has_allergy: Boolean(row.child_has_allergy),
+      allergy_note: row.child_allergy_note || null,
     },
     duration_minutes: row.duration_minutes,
     started_at: row.started_at instanceof Date ? row.started_at.toISOString() : row.started_at,
@@ -69,6 +74,7 @@ export function toSessionDTO(row, settings = null) {
     status: row.status,
     late_minutes: row.late_minutes,
     late_fee: Number(row.late_fee),
+    guardian_added_minutes: row.guardian_added_minutes || 0,
     price,
     currency: settings ? settings.currency : null,
   };

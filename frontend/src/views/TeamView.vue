@@ -186,7 +186,7 @@ const ui = useUiStore();
 
 const ROLE_OPTS = [
   { role: 'manager', titleKey: 'tm_role_manager', hintKey: 'tm_role_manager_hint' },
-  { role: 'staff', titleKey: 'tm_role_staff', hintKey: 'tm_role_staff_hint' },
+  { role: 'staff', titleKey: 'tm_role_reception', hintKey: 'tm_role_reception_hint' },
 ];
 
 const form = ref(null);
@@ -201,7 +201,7 @@ const delError = ref('');
 
 const groups = computed(() => [
   { role: 'manager', titleKey: 'tm_managers', hintKey: 'tm_role_manager_hint', rows: users.managers },
-  { role: 'staff', titleKey: 'tm_staff_group', hintKey: 'tm_role_staff_hint', rows: users.staff },
+  { role: 'staff', titleKey: 'tm_staff_group', hintKey: 'tm_role_reception_hint', rows: users.staff },
 ]);
 
 const canSave = computed(() => {
@@ -296,7 +296,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey));
 /* width:100% is load-bearing: .app-root is a column flex container, and the
    auto side margins would otherwise suppress the stretch and shrink-wrap this
    page to its content width. */
-.team-root { width: 100%; max-width: 1080px; margin: 0 auto; padding: 26px 24px 60px; }
+.team-root { width: 100%; padding: 26px 28px 60px; }
 
 /* ---- page head ---- */
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 26px; }

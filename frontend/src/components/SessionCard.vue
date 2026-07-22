@@ -13,6 +13,17 @@
       </div>
     </div>
 
+    <!-- Medical safety: staff must see this without opening anything. -->
+    <div v-if="session.child?.has_allergy" class="allergy" :title="session.child.allergy_note || t('allergy_badge')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
+        <path d="M12 9v5M12 17.5v.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+      </svg>
+      <span class="allergy-t">
+        <strong>{{ t('allergy_badge') }}</strong>
+        <template v-if="session.child.allergy_note"> · {{ session.child.allergy_note }}</template>
+      </span>
+    </div>
+
     <div class="ring-wrap" :class="{ 'is-over': isOvertime }" :style="{ '--glow': s.color }">
       <ProgressRing :frac="ringFrac" :color="s.color" :size="134">
         <div class="cd" :style="{ color: s.color, fontSize: cdSize + 'px' }" dir="ltr">{{ cd.sign }}{{ cd.text }}</div>
@@ -159,6 +170,15 @@ function onEnd() {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Warning colour + an icon, so it never depends on colour alone. */
+.allergy {
+  display: flex; align-items: flex-start; gap: 8px;
+  background: #FDECEC; border: 1.5px solid #F6C9C9; border-radius: 12px;
+  padding: 8px 11px; color: #B4363A;
+}
+.allergy svg { flex: none; margin-top: 1px; }
+.allergy-t { font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
 
 .ring-wrap { position: relative; display: flex; align-items: center; justify-content: center; padding: 2px 0; }
 /* Soft halo behind the ring; only shown (and pulsing) once a session runs over. */

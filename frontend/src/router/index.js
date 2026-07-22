@@ -5,6 +5,10 @@ const routes = [
   { path: '/login', name: 'login', component: () => import('@/views/LoginView.vue'), meta: { guest: true } },
   { path: '/register', name: 'register', component: () => import('@/views/RegisterView.vue'), meta: { public: true } },
   { path: '/c/:token', name: 'card', component: () => import('@/views/CardView.vue'), meta: { public: true } },
+  // Links a mother receives or scans: book a party, rate a visit, add an hour.
+  { path: '/book', name: 'book', component: () => import('@/views/PublicBookingView.vue'), meta: { public: true } },
+  { path: '/r/:token', name: 'review', component: () => import('@/views/ReviewView.vue'), meta: { public: true } },
+  { path: '/x/:token', name: 'extend', component: () => import('@/views/ExtendView.vue'), meta: { public: true } },
 
   { path: '/', name: 'dashboard', component: () => import('@/views/DashboardView.vue'), meta: { auth: true } },
   { path: '/start', name: 'start', component: () => import('@/views/StartSessionView.vue'), meta: { auth: true } },
@@ -12,7 +16,10 @@ const routes = [
   { path: '/customers', name: 'customers', component: () => import('@/views/CustomersView.vue'), meta: { auth: true } },
   { path: '/customers/:id', name: 'customer', component: () => import('@/views/CustomersView.vue'), meta: { auth: true } },
   { path: '/settings', name: 'settings', component: () => import('@/views/SettingsView.vue'), meta: { auth: true } },
-  { path: '/finance', name: 'finance', component: () => import('@/views/FinanceView.vue'), meta: { auth: true } },
+  { path: '/bookings', name: 'bookings', component: () => import('@/views/BookingsView.vue'), meta: { auth: true } },
+  // Finance, insights and the team are manager-only — the API enforces this too.
+  { path: '/finance', name: 'finance', component: () => import('@/views/FinanceView.vue'), meta: { auth: true, role: 'manager' } },
+  { path: '/insights', name: 'insights', component: () => import('@/views/InsightsView.vue'), meta: { auth: true, role: 'manager' } },
   { path: '/team', name: 'team', component: () => import('@/views/TeamView.vue'), meta: { auth: true, role: 'manager' } },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },

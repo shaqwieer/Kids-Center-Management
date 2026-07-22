@@ -69,6 +69,7 @@ export const env = {
         welcome: process.env.WHATSAPP_TEMPLATE_WELCOME || 'farfasha_welcome',
         warn_5: process.env.WHATSAPP_TEMPLATE_WARN5 || 'farfasha_warn5',
         time_up: process.env.WHATSAPP_TEMPLATE_TIMEUP || 'farfasha_timeup',
+        review: process.env.WHATSAPP_TEMPLATE_REVIEW || 'farfasha_review',
       },
     },
     twilio: {

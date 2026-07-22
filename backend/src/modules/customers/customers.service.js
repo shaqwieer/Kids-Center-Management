@@ -30,6 +30,39 @@ async function childrenOf(customerId) {
   return db('children').where({ customer_id: customerId }).orderBy('created_at', 'asc');
 }
 
+/** Age in whole years from a birthdate, or null if it isn't a usable date. */
+function ageFromBirthdate(birthdate) {
+  if (!birthdate) return null;
+  const bd = new Date(birthdate);
+  if (Number.isNaN(bd.getTime())) return null;
+  const now = new Date();
+  let years = now.getUTCFullYear() - bd.getUTCFullYear();
+  const beforeBirthday = now.getUTCMonth() < bd.getUTCMonth()
+    || (now.getUTCMonth() === bd.getUTCMonth() && now.getUTCDate() < bd.getUTCDate());
+  if (beforeBirthday) years -= 1;
+  return years >= 0 && years < 130 ? years : null;
+}
+
+/**
+ * The child columns every write path shares. Birthdate is the source of truth
+ * now that the form asks for it; `age` is kept in sync (and still accepted on
+ * its own for older records and the staff quick-add).
+ */
+function childFacts(ch) {
+  const birthdate = ch.birthdate ? String(ch.birthdate).slice(0, 10) : null;
+  const derived = ageFromBirthdate(birthdate);
+  const explicit = ch.age !== undefined && ch.age !== '' && ch.age !== null ? Number(ch.age) : null;
+  const hasAllergy = Boolean(ch.has_allergy);
+  return {
+    age: derived ?? explicit,
+    gender: ch.gender === 'm' || ch.gender === 'f' ? ch.gender : null,
+    birthdate,
+    has_allergy: hasAllergy,
+    // Clearing the flag clears the note — no stale allergy text left behind.
+    allergy_note: hasAllergy && ch.allergy_note ? String(ch.allergy_note).trim().slice(0, 500) : null,
+  };
+}
+
 export async function searchCustomers(tenantId, q) {
   const query = db('customers as c')
     .leftJoin('children as ch', 'ch.customer_id', 'c.id')
@@ -86,9 +119,7 @@ async function insertChildren(trx, customerId, children = []) {
     .map((ch) => ({
       customer_id: customerId,
       name: String(ch.name).trim(),
-      age: ch.age !== undefined && ch.age !== '' && ch.age !== null ? Number(ch.age) : null,
-      gender: ch.gender === 'm' || ch.gender === 'f' ? ch.gender : null,
-      birthdate: ch.birthdate || null,
+      ...childFacts(ch),
     }));
   if (rows.length) await trx('children').insert(rows);
 }
@@ -141,12 +172,7 @@ export async function updateCustomer(tenantId, id, data) {
       await trx('children').where({ customer_id: id }).whereNotIn('id', keepIds.length ? keepIds : ['00000000-0000-0000-0000-000000000000']).del();
       // update existing / insert new
       for (const ch of incoming) {
-        const payload = {
-          name: String(ch.name || '').trim(),
-          age: ch.age !== undefined && ch.age !== '' && ch.age !== null ? Number(ch.age) : null,
-          gender: ch.gender === 'm' || ch.gender === 'f' ? ch.gender : null,
-          birthdate: ch.birthdate || null,
-        };
+        const payload = { name: String(ch.name || '').trim(), ...childFacts(ch) };
         if (!payload.name) continue; // eslint-disable-line no-continue
         if (ch.id) {
           // eslint-disable-next-line no-await-in-loop
@@ -199,6 +225,14 @@ export async function getPublicCard(qrToken) {
     customer_code: c.customer_code,
     qr_token: c.qr_token,
     card_url: cardUrl(c.qr_token),
-    children: children.map((k) => ({ id: k.id, name: k.name, gender: k.gender, age: k.age })),
+    children: children.map((k) => ({
+      id: k.id,
+      name: k.name,
+      gender: k.gender,
+      age: k.age,
+      birthdate: k.birthdate,
+      has_allergy: Boolean(k.has_allergy),
+      allergy_note: k.allergy_note,
+    })),
   };
 }

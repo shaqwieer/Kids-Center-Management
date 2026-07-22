@@ -76,8 +76,22 @@
 
                 <input v-model="ch.name" class="fc-input" :placeholder="t('rg_child_name_ph')" :aria-label="`${t('rg_child')} ${i + 1}`" />
 
+                <div class="field mt">
+                  <label class="lbl" :for="`bd-${i}`">
+                    {{ t('rg_birthdate') }}
+                    <span v-if="ageOf(ch) !== null" class="age-pill">{{ ageOf(ch) }} {{ t('yrs') }}</span>
+                  </label>
+                  <input
+                    :id="`bd-${i}`"
+                    v-model="ch.birthdate"
+                    class="fc-input"
+                    type="date"
+                    dir="ltr"
+                    :max="todayIso"
+                  />
+                </div>
+
                 <div class="child-row">
-                  <input v-model="ch.age" class="fc-input age-input" inputmode="numeric" :placeholder="t('rg_age_ph')" :aria-label="t('rg_age')" />
                   <button
                     type="button"
                     class="gender-btn"
@@ -92,6 +106,32 @@
                     :aria-pressed="ch.gender === 'f'"
                     @click="ch.gender = 'f'"
                   >{{ t('girl') }}</button>
+                </div>
+
+                <!-- Allergies: a plain yes/no, and the note only when it matters. -->
+                <div class="allergy">
+                  <div class="allergy-q">{{ t('rg_allergy_q') }}</div>
+                  <div class="allergy-row">
+                    <button
+                      type="button"
+                      class="al-btn"
+                      :class="{ 'no-on': ch.has_allergy === false }"
+                      :aria-pressed="ch.has_allergy === false"
+                      @click="ch.has_allergy = false; ch.allergy_note = ''"
+                    >{{ t('rg_allergy_no') }}</button>
+                    <button
+                      type="button"
+                      class="al-btn"
+                      :class="{ 'yes-on': ch.has_allergy === true }"
+                      :aria-pressed="ch.has_allergy === true"
+                      @click="ch.has_allergy = true"
+                    >{{ t('rg_allergy_yes') }}</button>
+                  </div>
+                  <div v-if="ch.has_allergy" class="allergy-note">
+                    <label class="lbl" :for="`al-${i}`">{{ t('rg_allergy_note') }}</label>
+                    <input :id="`al-${i}`" v-model="ch.allergy_note" class="fc-input" :placeholder="t('rg_allergy_note_ph')" maxlength="500" />
+                    <p class="allergy-hint">{{ t('rg_allergy_hint') }}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -111,7 +151,18 @@
             <span class="cbox" :class="{ on: consent }">
               <svg v-if="consent" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
             </span>
-            <span class="consent-txt">{{ t('rg_consent') }}</span>
+            <span class="consent-txt">
+              {{ t('rg_consent') }}
+              <!-- The terms open in a new tab so a half-filled form is never lost. -->
+              <a
+                v-if="termsUrl"
+                :href="termsUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="terms-a"
+                @click.stop
+              >{{ t('rg_terms_link') }}</a>
+            </span>
           </button>
 
           <button class="fc-btn fc-btn-primary submit-btn" type="button" :disabled="!canSubmit || submitting" @click="submit">
@@ -166,16 +217,31 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import QRCode from 'qrcode';
 import BrandLogo from '@/components/BrandLogo.vue';
+import api from '@/lib/api.js';
 import { useCustomersStore } from '@/stores/customers.js';
 import { useUiStore } from '@/stores/ui.js';
 
 const { t } = useI18n();
 const customers = useCustomersStore();
 const ui = useUiStore();
+
+// The terms link inside the consent statement is centre-configurable; if no URL
+// is set the consent still reads correctly, just without the link.
+const termsUrl = ref('');
+const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/public/center');
+    termsUrl.value = data.center.terms_url || '';
+  } catch {
+    termsUrl.value = '';
+  }
+});
 
 const mode = ref('form'); // 'form' | 'done'
 const result = ref(null);
@@ -186,13 +252,26 @@ const full_name = ref('');
 const phone = ref('');
 const national_id = ref('');
 const consent = ref(false);
-const children = ref([{ name: '', age: '', gender: '' }]);
+const blankChild = () => ({ name: '', birthdate: '', gender: '', has_allergy: null, allergy_note: '' });
+const children = ref([blankChild()]);
 
 function addChild() {
-  children.value.push({ name: '', age: '', gender: '' });
+  children.value.push(blankChild());
 }
 function removeChild(i) {
   children.value.splice(i, 1);
+}
+
+/** Whole years from the entered birthdate — shown live beside the field. */
+function ageOf(ch) {
+  if (!ch.birthdate) return null;
+  const bd = new Date(ch.birthdate);
+  if (Number.isNaN(bd.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - bd.getFullYear();
+  const m = now.getMonth() - bd.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) years -= 1;
+  return years >= 0 && years < 130 ? years : null;
 }
 
 const canSubmit = computed(() =>
@@ -224,7 +303,14 @@ async function submit() {
       consent: true,
       children: children.value
         .filter((c) => c.name.trim())
-        .map((c) => ({ name: c.name.trim(), age: c.age || null, gender: c.gender || null })),
+        .map((c) => ({
+          name: c.name.trim(),
+          birthdate: c.birthdate || null,
+          age: ageOf(c),
+          gender: c.gender || null,
+          has_allergy: c.has_allergy === true,
+          allergy_note: c.has_allergy === true ? (c.allergy_note || '').trim() || null : null,
+        })),
     });
     result.value = cust;
     await genQr(cust.card_url);
@@ -247,7 +333,7 @@ function reset() {
   phone.value = '';
   national_id.value = '';
   consent.value = false;
-  children.value = [{ name: '', age: '', gender: '' }];
+  children.value = [blankChild()];
   result.value = null;
   qrDataUrl.value = '';
   mode.value = 'form';
@@ -324,7 +410,27 @@ function reset() {
 .child-num { width: 24px; height: 24px; border-radius: 8px; background: var(--brand); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
 .child-remove { display: inline-flex; align-items: center; gap: 4px; background: none; border: none; color: #C0876B; cursor: pointer; font-weight: 700; font-size: 13px; }
 .child-row { display: flex; gap: 10px; margin-top: 10px; }
-.age-input { width: 84px; flex: none; text-align: center; padding: 0 8px; }
+.mt { margin-top: 12px; margin-bottom: 0; }
+.age-pill {
+  background: #EAF7F4; color: #0E8C7E; font-size: 11px; font-weight: 800;
+  padding: 2px 9px; border-radius: 999px; margin-inline-start: 6px;
+}
+
+/* allergies */
+.allergy { margin-top: 12px; border-top: 1px dashed var(--line-3); padding-top: 12px; }
+.allergy-q { font-size: 13px; font-weight: 700; color: var(--muted-strong); margin-bottom: 8px; }
+.allergy-row { display: flex; gap: 10px; }
+.al-btn {
+  flex: 1; height: 46px;
+  border: 2px solid var(--line-3); border-radius: 13px; background: #fff;
+  font-family: var(--font-body); font-weight: 700; font-size: 14.5px; color: var(--muted-strong);
+  cursor: pointer; transition: all .15s ease;
+}
+.al-btn.no-on { border-color: var(--play); background: #EAF7F4; color: #0E8C7E; }
+.al-btn.yes-on { border-color: var(--over); background: #FDECEC; color: var(--over); }
+.allergy-note { margin-top: 10px; }
+.allergy-hint { font-size: 11.5px; color: var(--muted-3); margin: 6px 0 0; line-height: 1.5; }
+
 .gender-btn {
   flex: 1; height: 52px;
   border: 2px solid var(--line-3); border-radius: 14px;
@@ -366,6 +472,7 @@ function reset() {
 }
 .cbox.on { background: var(--brand); border-color: var(--brand); }
 .consent-txt { font-size: 13px; color: var(--muted-strong); line-height: 1.5; }
+.terms-a { color: var(--accent); font-weight: 700; text-decoration: underline; margin-inline-start: 5px; }
 .submit-btn { flex: none; min-width: 240px; height: 52px; font-size: 16px; }
 .fc-spin.small { width: 22px; height: 22px; border-width: 3px; }
 
@@ -412,14 +519,21 @@ function reset() {
   .home-btn { max-width: none; }
 }
 @media (max-width: 620px) {
-  .reg-root { padding-bottom: 132px; }
-  .hero { padding: 38px 20px 46px; }
-  .wrap { padding: 0 16px; }
-  .pane { padding: 18px 16px 20px; }
+  /* The action bar is fixed, so the page must reserve its full height —
+     otherwise the last child card sits permanently under the consent bar. */
+  .reg-root { padding-bottom: 168px; }
+  .hero { padding: 34px 16px 42px; }
+  .hero-sub { font-size: 13.5px; }
+  .lang-fab { top: 14px; inset-inline-end: 14px; height: 36px; padding: 0 12px; }
+  .wrap { padding: 0 14px; }
+  .pane { padding: 18px 14px 20px; }
   .pair { grid-template-columns: 1fr; gap: 0; }
   .kids { grid-template-columns: 1fr; }
-  .ab-inner { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 16px; }
+  .ab-inner { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 14px; }
   .submit-btn { min-width: 0; width: 100%; }
+  .child-card { padding: 12px; }
+  .done-wrap { padding: 3vh 14px 32px; }
+  .personal-card { width: 100%; max-width: 320px; }
 }
 
 @media print {
