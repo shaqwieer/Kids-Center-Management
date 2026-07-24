@@ -22,7 +22,6 @@
             <option value="sessions">{{ t('xl_sessions') }}</option>
             <option value="customers">{{ t('xl_customers') }}</option>
             <option value="bookings">{{ t('xl_bookings') }}</option>
-            <option value="expenses">{{ t('xl_expenses') }}</option>
             <option value="reviews">{{ t('xl_reviews') }}</option>
           </select>
           <button type="button" class="fc-btn fc-btn-ghost xl-btn" :disabled="exporting" @click="doExport">

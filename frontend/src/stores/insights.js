@@ -28,7 +28,7 @@ export const useInsightsStore = defineStore('insights', {
       });
       const disposition = res.headers['content-disposition'] || '';
       const match = disposition.match(/filename="?([^"]+)"?/);
-      const filename = match ? match[1] : `farfasha-${type}.xlsx`;
+      const filename = match ? match[1] : `blend-play-sip-${type}.xlsx`;
 
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a');

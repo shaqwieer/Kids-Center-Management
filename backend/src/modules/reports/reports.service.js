@@ -369,7 +369,9 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
   }
 
   // ---- Expenses ------------------------------------------------------------
-  if (want('expenses')) {
+  // Revenue-only model: the expenses sheet is excluded from the "full" report and
+  // only produced on an explicit expenses export (the type is kept for reversibility).
+  if (type === 'expenses') {
     const rows = await db('expenses')
       .where({ tenant_id: tenantId })
       .andWhereBetween('incurred_at', [start, end])
@@ -417,5 +419,5 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
 
   const buffer = await wb.xlsx.writeBuffer();
   const stamp = DateTime.now().setZone(ZONE).toFormat('yyyy-LL-dd');
-  return { buffer: Buffer.from(buffer), filename: `farfasha-${type}-${stamp}.xlsx` };
+  return { buffer: Buffer.from(buffer), filename: `blend-play-sip-${type}-${stamp}.xlsx` };
 }
