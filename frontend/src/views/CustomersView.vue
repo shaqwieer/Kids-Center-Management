@@ -128,7 +128,17 @@
         <div v-else class="children-edit">
           <div v-for="(ch, i) in edit.children" :key="i" class="ce-row">
             <input v-model="ch.name" class="fc-input sm ce-name" :placeholder="t('rg_child_name_ph')" />
-            <input v-model.number="ch.age" type="number" min="0" max="17" class="fc-input sm ce-age" :placeholder="t('rg_age_ph')" />
+            <div class="ce-bd">
+              <input
+                v-model="ch.birthdate"
+                type="date"
+                dir="ltr"
+                :max="todayIso"
+                class="fc-input sm ce-date"
+                :aria-label="t('rg_birthdate')"
+              />
+              <span v-if="displayAge(ch) !== null" class="ce-agepill">{{ displayAge(ch) }} {{ t('yrs') }}</span>
+            </div>
             <div class="ce-gender">
               <button
                 class="g-btn"
@@ -209,6 +219,29 @@ const saving = ref(false);
 
 const activeId = computed(() => cust.value?.id);
 
+// Date picker upper bound (a child can't be born in the future), in Riyadh.
+const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
+
+/** Whole years from an entered birthdate — the live preview beside the field. */
+function ageOf(ch) {
+  if (!ch.birthdate) return null;
+  const bd = new Date(ch.birthdate);
+  if (Number.isNaN(bd.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - bd.getFullYear();
+  const m = now.getMonth() - bd.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) years -= 1;
+  return years >= 0 && years < 130 ? years : null;
+}
+
+// Prefer the birthdate-derived age; fall back to a legacy numeric age so a child
+// registered before the DOB field existed still shows (and keeps) their age.
+function displayAge(ch) {
+  const fromBd = ageOf(ch);
+  if (fromBd !== null) return fromBd;
+  return ch.age != null && ch.age !== '' ? Number(ch.age) : null;
+}
+
 function durLabel(min) {
   const k = durationKey(min);
   return k ? t(k) : `${min} ${t('mins')}`;
@@ -272,7 +305,9 @@ function enterEdit() {
     phone: cust.value.phone,
     national_id: cust.value.national_id || '',
     children: (cust.value.children || []).map((c) => ({
-      id: c.id, name: c.name, age: c.age, gender: c.gender || 'm',
+      // Keep `age` as a fallback: existing children may have only a numeric age
+      // and no birthdate, and we must not wipe it on save.
+      id: c.id, name: c.name, birthdate: c.birthdate || '', age: c.age, gender: c.gender || 'm',
     })),
   };
   editing.value = true;
@@ -284,7 +319,7 @@ function cancelEdit() {
 }
 
 function addChild() {
-  edit.value.children.push({ name: '', age: '', gender: 'm' });
+  edit.value.children.push({ name: '', birthdate: '', age: '', gender: 'm' });
 }
 
 function removeChild(i) {
@@ -511,7 +546,15 @@ function printCard() {
   flex-wrap: wrap;
 }
 .ce-name { flex: 1; min-width: 140px; }
-.ce-age { width: 90px; flex: none; text-align: center; }
+.ce-bd { display: flex; align-items: center; gap: 8px; flex: none; }
+.ce-date { width: 150px; flex: none; }
+.ce-agepill {
+  background: var(--chip);
+  color: var(--muted-strong);
+  font-size: 12px; font-weight: 700;
+  padding: 4px 9px; border-radius: 999px;
+  white-space: nowrap;
+}
 .ce-gender { display: flex; gap: 6px; }
 .g-btn {
   height: 44px; padding: 0 16px;

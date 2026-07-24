@@ -1,12 +1,12 @@
 // Arabic (default). Copy ported verbatim from the Farfasha design DICT.
 export default {
-  brand: 'فرفشة', tagline: 'حيث تبدأ المتعة',
+  brand: 'Blend Play & Sip', tagline: '',
   nav_home: 'الرئيسية', nav_customers: 'العملاء', nav_finance: 'المالية', nav_settings: 'الإعدادات',
   nav_team: 'الفريق',
   register_cta: 'تسجيل عميل', lang_switch: 'English', logout: 'تسجيل الخروج',
 
   // Login
-  login_title: 'تسجيل دخول الموظفين', login_sub: 'مركز فرفشة للألعاب',
+  login_title: 'تسجيل دخول الموظفين', login_sub: 'مركز Blend Play & Sip',
   login_email: 'البريد الإلكتروني', login_password: 'كلمة المرور',
   login_submit: 'دخول', login_error: 'بيانات الدخول غير صحيحة', login_demo: 'حسابات تجريبية',
   login_welcome: 'أهلاً بعودتك',
@@ -38,7 +38,7 @@ export default {
 
   // Dashboard
   dash_title: 'من يلعب الآن', children_playing: 'أطفال يلعبون الآن',
-  filter_all: 'الكل', filter_soon: 'أوشك الوقت', filter_over: 'وقت إضافي',
+  filter_all: 'الكل', filter_soon: 'أوشك الوقت', filter_over: 'منتهي الوقت',
   start_new: 'بدء جلسة جديدة', add_time: 'إضافة وقت', end_session: 'إنهاء الجلسة',
   mother: 'الأم', duration: 'المدة', started: 'بدأت', timeleft: 'الوقت المتبقي', late: 'وقت إضافي',
   st_playing: 'يلعب', st_warning: 'أوشك الوقت', st_overtime: 'وقت إضافي',
@@ -59,11 +59,11 @@ export default {
   ss_confirm_hint: 'سيبدأ العدّاد فور الضغط على «بدء اللعب»',
 
   // Register (public)
-  rg_welcome: 'أهلاً بك في فرفشة', rg_sub: 'سجّل بياناتك مرة واحدة، واستمتع بدخول سريع في كل زيارة',
+  rg_welcome: 'أهلاً بك في Blend Play & Sip', rg_sub: 'سجّل بياناتك مرة واحدة، واستمتع بدخول سريع في كل زيارة',
   rg_mother_info: 'بيانات ولي الأمر', rg_full_name: 'الاسم الكامل', rg_full_name_ph: 'مثال: نورة العتيبي',
   rg_phone: 'رقم الجوال', rg_phone_ph: '05xxxxxxxx', rg_natid: 'رقم الهوية', rg_optional: 'اختياري', rg_natid_ph: '١٠ أرقام',
   rg_children: 'الأطفال', rg_child: 'الطفل', rg_child_name_ph: 'اسم الطفل', rg_age: 'العمر', rg_age_ph: 'السنوات',
-  rg_add_child: 'إضافة طفل آخر', rg_remove: 'حذف', rg_consent: 'أوافق على شروط الاستخدام وسياسة الخصوصية لمركز فرفشة',
+  rg_add_child: 'إضافة طفل آخر', rg_remove: 'حذف', rg_consent: 'أوافق على شروط الاستخدام وسياسة الخصوصية لمركز Blend Play & Sip',
   rg_submit: 'إنشاء الحساب', rg_done_title: 'تم التسجيل بنجاح!', rg_done_sub: 'هذه بطاقتك الشخصية — احتفظ بها',
   rg_your_code: 'رمز العميل', rg_scan_next: 'أظهر رمز QR في زيارتك القادمة لتسجيل الدخول فوراً دون إعادة إدخال بياناتك.',
   rg_done_home: 'العودة إلى الرئيسية', rg_save: 'حفظ البطاقة', rg_exists: 'أنت مسجّل بالفعل — هذه بطاقتك',
@@ -115,7 +115,8 @@ export default {
   qr_err_notfound: 'لم يتم العثور على العميل — قد تكون البطاقة قديمة',
 
   // Finance
-  fin_title: 'المالية', fin_sub: 'الإيرادات والمصروفات', fin_today: 'اليوم', fin_week: 'الأسبوع', fin_month: 'الشهر', fin_export: 'تصدير التقرير',
+  fin_title: 'المالية', fin_sub: 'الإيرادات', fin_today: 'اليوم', fin_week: 'الأسبوع', fin_month: 'الشهر', fin_export: 'تصدير التقرير',
+  fin_top_day: 'أكثر يوم إيراداً', fin_top_month: 'أكثر شهر إيراداً', fin_top_source: 'أكثر مصدر دخل',
   fin_revenue: 'إجمالي الإيرادات', fin_expenses: 'إجمالي المصروفات', fin_net: 'صافي الربح', fin_sessions: 'عدد الجلسات', fin_vs: 'مقارنة بالفترة السابقة',
   fin_weekly: 'الإيرادات خلال الأسبوع', fin_rev_break: 'مصادر الإيراد', fin_exp_break: 'المصروفات حسب البند', fin_ledger: 'أحدث الحركات',
   fin_month_label: 'هذا الشهر', fin_placeholder: 'بيانات تجريبية — تُضاف وحدة المصروفات لاحقاً',
@@ -157,7 +158,7 @@ export default {
   bk_qr_hint: 'شاركي هذا الرابط أو رمز QR مع العملاء ليحجزوا بأنفسهم',
 
   // Public booking page
-  pb_title: 'احجزي حفلتك في فرفشة', pb_sub: 'اختاري التاريخ والوقت وسنجهّز كل شيء',
+  pb_title: 'احجزي حفلتك في Blend Play & Sip', pb_sub: 'اختاري التاريخ والوقت وسنجهّز كل شيء',
   pb_step_type: 'نوع المناسبة', pb_step_when: 'التاريخ والوقت', pb_step_details: 'التفاصيل', pb_step_confirm: 'التأكيد',
   pb_pick_date: 'اختاري التاريخ', pb_your_info: 'بياناتك',
   pb_price_base: 'السعر الأساسي', pb_price_children: 'رسوم الأطفال', pb_price_food: 'الضيافة',
@@ -183,7 +184,7 @@ export default {
   rv_title: 'ما رأيك في الزيارة؟', rv_sub: 'رأيك يساعدنا نخدمك بشكل أفضل',
   rv_for_child: 'زيارة {child}',
   rv_1: 'سيئة', rv_2: 'مقبولة', rv_3: 'جيدة', rv_4: 'ممتازة', rv_5: 'رائعة',
-  rv_comment: 'كيف نخدمك بشكل أفضل؟', rv_comment_ph: 'اكتبي ملاحظاتك هنا (اختياري)',
+  rv_comment: 'كيف نجعل تجربتك أجمل؟', rv_comment_ph: 'اكتبي ملاحظاتك هنا (اختياري)',
   rv_submit: 'إرسال التقييم', rv_thanks: 'شكراً لك!', rv_thanks_sub: 'وصلنا تقييمك ونقدّر وقتك',
   rv_already: 'سبق أن قيّمتِ هذه الزيارة', rv_pick: 'اختاري تقييمك',
   rv_summary: 'تقييمات العملاء', rv_average: 'متوسط التقييم', rv_responses: 'عدد التقييمات',

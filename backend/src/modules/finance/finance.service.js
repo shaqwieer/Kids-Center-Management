@@ -3,8 +3,9 @@
  * sessions (base price by duration + late fees), with all period boundaries in
  * Asia/Riyadh. Operating expenses come from the tenant-scoped expense ledger.
  */
+import { DateTime } from 'luxon';
 import { db } from '../../config/db.js';
-import { periodRange, trailingWeekDays } from '../../utils/time.js';
+import { periodRange, trailingWeekDays, ZONE } from '../../utils/time.js';
 import { priceForDuration } from '../../lib/timing.js';
 import { getSettings } from '../settings/settings.service.js';
 
@@ -128,6 +129,46 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
     { key: 'r_workshops', amount: workshopRevenue, color: '#12A594' },
   ];
 
+  // ---- Revenue-focused headline answers -----------------------------------
+  // Best single revenue day WITHIN the selected period (play + bookings).
+  const dayMap = new Map();
+  const addDay = (at, amt) => {
+    const key = DateTime.fromJSDate(new Date(at)).setZone(ZONE).toFormat('yyyy-MM-dd');
+    dayMap.set(key, (dayMap.get(key) || 0) + amt);
+  };
+  for (const r of rows) addDay(r.ended_at, sessionRevenue(r, durations).total);
+  for (const b of bookingRows) addDay(b.starts_at, Number(b.amount));
+  let topRevenueDay = null;
+  for (const [date, amount] of dayMap) {
+    if (!topRevenueDay || amount > topRevenueDay.amount) topRevenueDay = { date, amount };
+  }
+
+  // Best revenue month across the trailing 12 months (rolling, period-agnostic —
+  // a "best month" only makes sense over a span longer than the current period).
+  const monthFloor = DateTime.now().setZone(ZONE).minus({ months: 11 }).startOf('month').toUTC().toJSDate();
+  const [monthSessions, monthBookings] = await Promise.all([
+    db('sessions').where({ tenant_id: tenantId }).andWhere('status', 'completed')
+      .andWhere('ended_at', '>=', monthFloor).select('duration_minutes', 'late_fee', 'ended_at'),
+    db('bookings').where({ tenant_id: tenantId }).whereIn('status', ['confirmed', 'completed'])
+      .andWhere('starts_at', '>=', monthFloor).select('amount', 'starts_at'),
+  ]);
+  const monthMap = new Map();
+  const addMonth = (at, amt) => {
+    const key = DateTime.fromJSDate(new Date(at)).setZone(ZONE).toFormat('yyyy-MM');
+    monthMap.set(key, (monthMap.get(key) || 0) + amt);
+  };
+  for (const r of monthSessions) addMonth(r.ended_at, sessionRevenue(r, durations).total);
+  for (const b of monthBookings) addMonth(b.starts_at, Number(b.amount));
+  let topRevenueMonth = null;
+  for (const [month, amount] of monthMap) {
+    if (!topRevenueMonth || amount > topRevenueMonth.amount) topRevenueMonth = { month, amount };
+  }
+
+  // Top income source in the selected period.
+  const topIncomeSource = revenueBreakdown
+    .filter((s) => s.amount > 0)
+    .sort((a, b) => b.amount - a.amount)[0] || null;
+
   return {
     period,
     currency,
@@ -138,6 +179,9 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
       sessions: rows.length,
       bookings: bookingRows.length,
     },
+    top_revenue_day: topRevenueDay,
+    top_revenue_month: topRevenueMonth,
+    top_income_source: topIncomeSource,
     weekly,
     revenueBreakdown,
     expenses,

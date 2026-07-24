@@ -229,14 +229,19 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
       .orderBy('s.started_at', 'desc')
       .select(
         's.started_at', 's.ended_at', 's.duration_minutes', 's.late_minutes', 's.late_fee', 's.status',
-        'ch.name as child_name', 'c.full_name as guardian', 'c.phone', 'c.customer_code',
+        'ch.name as child_name', 'ch.birthdate', 'ch.age', 'ch.has_allergy', 'ch.allergy_note',
+        'c.full_name as guardian', 'c.phone', 'c.customer_code',
       );
     addSheet(wb, t.sessions, [
       { header: t.started, key: 'started', width: 18 },
       { header: t.ended, key: 'ended', width: 18 },
       { header: t.child, key: 'child', width: 20 },
+      { header: t.birthdate, key: 'birthdate', width: 14 },
+      { header: t.age, key: 'age', width: 8 },
       { header: t.guardian, key: 'guardian', width: 22 },
       { header: t.phone, key: 'phone', width: 15 },
+      { header: t.allergy, key: 'allergy', width: 10 },
+      { header: t.allergy_note, key: 'allergy_note', width: 30 },
       { header: t.code, key: 'code', width: 12 },
       { header: t.duration, key: 'duration', width: 14 },
       { header: t.played, key: 'played', width: 18 },
@@ -255,8 +260,12 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
         started: fmt(r.started_at),
         ended: fmt(r.ended_at),
         child: r.child_name,
+        birthdate: fmtDate(r.birthdate),
+        age: r.age,
         guardian: r.guardian,
         phone: r.phone,
+        allergy: r.has_allergy ? t.yes : t.no,
+        allergy_note: r.allergy_note || '',
         code: r.customer_code,
         duration: r.duration_minutes,
         played,

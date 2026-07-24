@@ -98,7 +98,7 @@
               :disabled="!sl.available"
               @click="slot = sl.slot"
             >
-              <span class="slot-t" dir="ltr">{{ sl.slot }}</span>
+              <span class="slot-t" dir="ltr">{{ slotLabel(sl.starts_at, sl.ends_at, ui.locale) }}</span>
               <span class="slot-s">{{ sl.available ? t('bk_available') : (sl.reason === 'taken' ? t('bk_taken') : t('bk_too_soon')) }}</span>
             </button>
           </div>
@@ -202,6 +202,7 @@ import { useI18n } from 'vue-i18n';
 import BrandLogo from '@/components/BrandLogo.vue';
 import { useBookingsStore } from '@/stores/bookings.js';
 import { useUiStore } from '@/stores/ui.js';
+import { slotLabel } from '@/lib/time.js';
 
 const { t } = useI18n();
 const ui = useUiStore();

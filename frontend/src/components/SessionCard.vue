@@ -108,7 +108,7 @@ const endBg = computed(() => (state.value === 'overtime' ? '#E5484D' : '#F97A53'
 
 async function onAddTime() {
   try {
-    await sessions.addTime(props.session.id, 15);
+    await sessions.addTime(props.session.id, 30);
     ui.toast(t('toast_added'), 'success');
   } catch (e) {
     ui.toast(t('error_generic'), 'error');

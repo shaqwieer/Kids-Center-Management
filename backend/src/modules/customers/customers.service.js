@@ -27,7 +27,16 @@ function customerView(c, children = []) {
 }
 
 async function childrenOf(customerId) {
-  return db('children').where({ customer_id: customerId }).orderBy('created_at', 'asc');
+  // Return birthdate as a plain 'YYYY-MM-DD' string (not a pg Date object): it
+  // must bind directly to <input type="date"> and round-trip through the staff
+  // edit form without a timezone shift silently moving the day on save.
+  return db('children')
+    .where({ customer_id: customerId })
+    .orderBy('created_at', 'asc')
+    .select(
+      'id', 'customer_id', 'name', 'age', 'gender', 'created_at', 'has_allergy', 'allergy_note',
+      db.raw("to_char(birthdate, 'YYYY-MM-DD') as birthdate"),
+    );
 }
 
 /** Age in whole years from a birthdate, or null if it isn't a usable date. */
