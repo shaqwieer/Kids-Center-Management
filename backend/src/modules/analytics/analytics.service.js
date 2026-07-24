@@ -19,18 +19,16 @@ const DAY_LABELS = {
 
 const label = (lang, i) => (DAY_LABELS[lang] || DAY_LABELS.en)[i] ?? '';
 
-function lookbackStart(days) {
-  return DateTime.now().setZone(ZONE).minus({ days }).startOf('day').toUTC().toJSDate();
-}
-
 /**
- * Sessions grouped by Riyadh weekday (0=Sun) and hour-of-day, over a lookback
- * window. One query, bucketed in SQL so we never pull thousands of rows.
+ * Sessions grouped by Riyadh weekday (0=Sun) and hour-of-day, within the
+ * selected reporting window. One query, bucketed in SQL so we never pull
+ * thousands of rows. Scoping this to the chosen period (today/week/month) is
+ * what makes the period tabs visibly drive the whole page, not just the KPIs.
  */
-async function busyBuckets(tenantId, sinceDate) {
+async function busyBuckets(tenantId, start, end) {
   const rows = await db('sessions')
     .where({ tenant_id: tenantId })
-    .andWhere('started_at', '>=', sinceDate)
+    .andWhereBetween('started_at', [start, end])
     .select(
       db.raw(`extract(dow from (started_at at time zone ?))::int as weekday`, [ZONE]),
       db.raw(`extract(hour from (started_at at time zone ?))::int as hour`, [ZONE]),
@@ -95,16 +93,16 @@ async function monthlyTrend(tenantId, months, durations) {
 }
 
 /**
- * The dashboard headline block. `lookback_days` controls the busy-pattern window
- * (90 days by default — long enough to be a pattern, short enough to be current).
+ * The dashboard headline block. Every figure — busy patterns, KPIs, income —
+ * is scoped to the selected `period` (today/week/month) so switching the tab
+ * changes the whole page; only the 6-month trend line is intentionally rolling.
  */
-export async function insights(tenantId, { period = 'month', lang = 'ar', lookbackDays = 90 } = {}) {
+export async function insights(tenantId, { period = 'month', lang = 'ar' } = {}) {
   const settings = await getSettings(tenantId);
   const durations = settings.durations;
-  const since = lookbackStart(lookbackDays);
   const { start, end } = periodRange(period);
 
-  const buckets = await busyBuckets(tenantId, since);
+  const buckets = await busyBuckets(tenantId, start, end);
 
   // Busiest day of week.
   const perDay = Array.from({ length: 7 }, (_, i) => ({
@@ -208,7 +206,6 @@ export async function insights(tenantId, { period = 'month', lang = 'ar', lookba
   return {
     period,
     currency: settings.currency,
-    lookback_days: lookbackDays,
     busiest_day: busiestDay,
     busiest_hour: busiestHour,
     by_weekday: perDay,

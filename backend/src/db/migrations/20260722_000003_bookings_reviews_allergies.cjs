@@ -62,7 +62,7 @@ exports.up = async function up(knex) {
     t.boolean('reviews_enabled').notNullable().defaultTo(true);
     t.integer('review_delay_minutes').notNullable().defaultTo(45);
     t.boolean('guardian_extend_enabled').notNullable().defaultTo(true);
-    t.integer('guardian_extend_minutes').notNullable().defaultTo(60);
+    t.integer('guardian_extend_minutes').notNullable().defaultTo(30);
   });
 
   await knex.schema.alterTable('sessions', (t) => {

@@ -85,7 +85,7 @@
               <select id="nb-s" v-model="form.slot" class="fc-input" dir="ltr">
                 <option value="">—</option>
                 <option v-for="sl in slots" :key="sl.slot" :value="sl.slot" :disabled="!sl.available">
-                  {{ sl.slot }}{{ sl.available ? '' : ` (${t('bk_taken')})` }}
+                  {{ slotLabel(sl.starts_at, sl.ends_at, ui.locale) }}{{ sl.available ? '' : ` (${t('bk_taken')})` }}
                 </option>
               </select>
             </div>
@@ -146,6 +146,7 @@ import { useBookingsStore } from '@/stores/bookings.js';
 import { useSettingsStore } from '@/stores/settings.js';
 import { useAuthStore } from '@/stores/auth.js';
 import { useUiStore } from '@/stores/ui.js';
+import { slotLabel } from '@/lib/time.js';
 
 const { t } = useI18n();
 const store = useBookingsStore();

@@ -4,26 +4,26 @@ import { db } from '../../config/db.js';
 const DEFAULTS = {
   durations: [{ min: 30, price: 25 }, { min: 60, price: 40 }, { min: 120, price: 70 }],
   late_fee_per_minute: 0,
-  center_name: 'فرفشة',
-  tagline: 'حيث تبدأ المتعة',
+  center_name: 'Blend Play & Sip',
+  tagline: '',
   primary_color: '#F97A53',
   currency: 'SAR',
   wa_templates: {
     welcome: {
-      ar: 'مرحباً {الاسم}! 🎉 تم تسجيلك في فرفشة. احتفظ برمزك للزيارات القادمة: {الرمز}',
-      en: 'Welcome {name}! 🎉 You are registered at Farfasha. Keep your code for next visits: {code}',
+      ar: 'مرحباً {الاسم}! 🎉 تم تسجيلك في Blend Play & Sip. احتفظ برمزك للزيارات القادمة: {الرمز}',
+      en: 'Welcome {name}! 🎉 You are registered at Blend Play & Sip. Keep your code for next visits: {code}',
     },
     warn_5: {
-      ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في فرفشة 🕐\nتبين تمديد ساعة إضافية؟ اضغطي هنا: {الرابط}',
-      en: '5 minutes left before {child}\'s play time ends at Farfasha 🕐\nWant to add another hour? Tap here: {link}',
+      ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في Blend Play & Sip 🕐\nتبين تمديد نصف ساعة إضافية؟ اضغطي هنا: {الرابط}',
+      en: '5 minutes left before {child}\'s play time ends at Blend Play & Sip 🕐\nWant to add 30 more minutes? Tap here: {link}',
     },
     time_up: {
       ar: 'انتهى وقت لعب {الطفل}. الوقت الإضافي حتى الآن: {الدقائق} دقيقة.',
       en: '{child}\'s play time is up. Overtime so far: {minutes} minutes.',
     },
     review: {
-      ar: 'شكراً لزيارتكم {المركز} 💛 ما رأيك في الزيارة؟ وكيف نخدمك بشكل أفضل؟\n{الرابط}',
-      en: 'Thank you for visiting {center} 💛 How was your visit, and how can we serve you better?\n{link}',
+      ar: 'شكراً لزيارتكم {المركز} 💛 ما رأيك في الزيارة؟ وكيف نجعل تجربتك أجمل؟\n{الرابط}',
+      en: 'Thank you for visiting {center} 💛 How was your visit, and how can we make your experience better?\n{link}',
     },
   },
   payments_enabled: false,
@@ -35,8 +35,8 @@ const DEFAULTS = {
       price_per_child: 35,
       min_children: 5,
       max_children: 40,
-      duration_minutes: 120,
-      slots: ['12:00', '15:00', '18:00'],
+      duration_minutes: 180,
+      slots: ['13:00', '17:00'],
       lead_hours: 24,
     },
     workshop: {
@@ -66,7 +66,7 @@ const DEFAULTS = {
   reviews_enabled: true,
   review_delay_minutes: 45,
   guardian_extend_enabled: true,
-  guardian_extend_minutes: 60,
+  guardian_extend_minutes: 30,
 };
 
 export async function ensureSettings(tenantId) {

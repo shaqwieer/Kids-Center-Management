@@ -1,12 +1,12 @@
 // English. Copy ported verbatim from the Farfasha design DICT.
 export default {
-  brand: 'Farfasha', tagline: 'Where the fun begins',
+  brand: 'Blend Play & Sip', tagline: '',
   nav_home: 'Home', nav_customers: 'Customers', nav_finance: 'Finance', nav_settings: 'Settings',
   nav_team: 'Team',
   register_cta: 'Register', lang_switch: 'عربي', logout: 'Log out',
 
   // Login
-  login_title: 'Staff sign in', login_sub: 'Farfasha Play Center',
+  login_title: 'Staff sign in', login_sub: 'Blend Play & Sip',
   login_email: 'Email', login_password: 'Password',
   login_submit: 'Sign in', login_error: 'Invalid credentials', login_demo: 'Demo accounts',
   login_welcome: 'Welcome back',
@@ -38,7 +38,7 @@ export default {
 
   // Dashboard
   dash_title: "Who's Playing Now", children_playing: 'children playing now',
-  filter_all: 'All', filter_soon: 'Ending soon', filter_over: 'Overtime',
+  filter_all: 'All', filter_soon: 'Ending soon', filter_over: "Time's up",
   start_new: 'Start New Session', add_time: 'Add Time', end_session: 'End Session',
   mother: 'Mother', duration: 'Duration', started: 'Started', timeleft: 'Time left', late: 'Overtime',
   st_playing: 'Playing', st_warning: 'Ending soon', st_overtime: 'Overtime',
@@ -59,11 +59,11 @@ export default {
   ss_confirm_hint: 'The timer starts the moment you tap Start Play',
 
   // Register (public)
-  rg_welcome: 'Welcome to Farfasha', rg_sub: 'Register once, then enjoy quick check-in on every visit',
+  rg_welcome: 'Welcome to Blend Play & Sip', rg_sub: 'Register once, then enjoy quick check-in on every visit',
   rg_mother_info: 'Guardian details', rg_full_name: 'Full name', rg_full_name_ph: 'e.g. Noura Al-Otaibi',
   rg_phone: 'Mobile number', rg_phone_ph: '05xxxxxxxx', rg_natid: 'National ID', rg_optional: 'optional', rg_natid_ph: '10 digits',
   rg_children: 'Children', rg_child: 'Child', rg_child_name_ph: 'Child name', rg_age: 'Age', rg_age_ph: 'Years',
-  rg_add_child: 'Add another child', rg_remove: 'Remove', rg_consent: "I agree to Farfasha center's terms of use and privacy policy",
+  rg_add_child: 'Add another child', rg_remove: 'Remove', rg_consent: "I agree to Blend Play & Sip's terms of use and privacy policy",
   rg_submit: 'Create account', rg_done_title: 'Registered successfully!', rg_done_sub: 'This is your personal card — keep it',
   rg_your_code: 'Customer code', rg_scan_next: 'Show this QR on your next visit to check in instantly without re-entering your details.',
   rg_done_home: 'Back to home', rg_save: 'Save card', rg_exists: "You're already registered — here is your card",
@@ -115,7 +115,8 @@ export default {
   qr_err_notfound: 'Customer not found — the card may be out of date',
 
   // Finance
-  fin_title: 'Finance', fin_sub: 'Revenue & expenses', fin_today: 'Today', fin_week: 'Week', fin_month: 'Month', fin_export: 'Export report',
+  fin_title: 'Finance', fin_sub: 'Revenue', fin_today: 'Today', fin_week: 'Week', fin_month: 'Month', fin_export: 'Export report',
+  fin_top_day: 'Top revenue day', fin_top_month: 'Top revenue month', fin_top_source: 'Top income source',
   fin_revenue: 'Total revenue', fin_expenses: 'Total expenses', fin_net: 'Net profit', fin_sessions: 'Sessions', fin_vs: 'vs previous period',
   fin_weekly: 'Revenue this week', fin_rev_break: 'Revenue sources', fin_exp_break: 'Expenses by category', fin_ledger: 'Recent transactions',
   fin_month_label: 'This month', fin_placeholder: 'Demo data — an expenses module will be added later',
@@ -157,7 +158,7 @@ export default {
   bk_qr_hint: 'Share this link or QR code so customers can book themselves',
 
   // Public booking page
-  pb_title: 'Book your party at Farfasha', pb_sub: 'Pick a date and time — we handle the rest',
+  pb_title: 'Book your party at Blend Play & Sip', pb_sub: 'Pick a date and time — we handle the rest',
   pb_step_type: 'Occasion', pb_step_when: 'Date & time', pb_step_details: 'Details', pb_step_confirm: 'Confirm',
   pb_pick_date: 'Choose a date', pb_your_info: 'Your details',
   pb_price_base: 'Base price', pb_price_children: 'Per-child fee', pb_price_food: 'Catering',
@@ -183,7 +184,7 @@ export default {
   rv_title: 'How was your visit?', rv_sub: 'Your feedback helps us serve you better',
   rv_for_child: "{child}'s visit",
   rv_1: 'Poor', rv_2: 'Fair', rv_3: 'Good', rv_4: 'Great', rv_5: 'Excellent',
-  rv_comment: 'How can we serve you better?', rv_comment_ph: 'Write your notes here (optional)',
+  rv_comment: 'How can we make your experience better?', rv_comment_ph: 'Write your notes here (optional)',
   rv_submit: 'Send feedback', rv_thanks: 'Thank you!', rv_thanks_sub: 'We received your feedback and appreciate your time',
   rv_already: 'You already reviewed this visit', rv_pick: 'Pick a rating',
   rv_summary: 'Customer reviews', rv_average: 'Average rating', rv_responses: 'Responses',

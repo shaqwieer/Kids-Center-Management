@@ -41,12 +41,12 @@
         <div class="fc-card hero-tile">
           <div class="hero-lbl">{{ t('in_busiest_day') }}</div>
           <div class="hero-val">{{ d.busiest_day.count ? d.busiest_day.label : '—' }}</div>
-          <div class="hero-note">{{ d.busiest_day.count }} {{ t('in_visits') }} · {{ t('in_lookback', { days: d.lookback_days }) }}</div>
+          <div class="hero-note">{{ d.busiest_day.count }} {{ t('in_visits') }} · {{ periodLabel }}</div>
         </div>
         <div class="fc-card hero-tile">
           <div class="hero-lbl">{{ t('in_busiest_hour') }}</div>
           <div class="hero-val" dir="ltr">{{ d.busiest_hour.count ? hourLabel(d.busiest_hour.hour) : '—' }}</div>
-          <div class="hero-note">{{ d.busiest_hour.count }} {{ t('in_visits') }} · {{ t('in_lookback', { days: d.lookback_days }) }}</div>
+          <div class="hero-note">{{ d.busiest_hour.count }} {{ t('in_visits') }} · {{ periodLabel }}</div>
         </div>
         <div class="fc-card hero-tile accent">
           <div class="hero-lbl">{{ t('in_growth') }}</div>
@@ -244,6 +244,7 @@ const reportType = ref('full');
 
 const d = computed(() => store.data);
 const rv = computed(() => store.reviews);
+const periodLabel = computed(() => t(PERIODS.find((p) => p.key === store.period)?.label || 'fin_month'));
 
 const pct = (v, max) => (max > 0 ? Math.round((Number(v) / max) * 100) : 0);
 const fmtMoney = (v) => `${Number(v || 0).toLocaleString('en-US')} ${d.value?.currency || ''}`;

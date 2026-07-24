@@ -1,19 +1,17 @@
 <template>
   <div class="brand" :class="`tone-${tone}`" :style="{ gap: showText ? '12px' : '0' }">
     <div class="mark" :style="{ width: size + 'px', height: size + 'px', fontSize: size * 0.52 + 'px', borderRadius: size * 0.32 + 'px' }">
-      {{ isAr ? 'ف' : 'F' }}
+      B
     </div>
     <div v-if="showText">
       <div class="name">{{ t('brand') }}</div>
-      <div class="tag">{{ t('tagline') }}</div>
+      <div v-if="t('tagline')" class="tag">{{ t('tagline') }}</div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { useI18n } from 'vue-i18n';
-import { useUiStore } from '@/stores/ui.js';
-import { storeToRefs } from 'pinia';
 
 defineProps({
   size: { type: Number, default: 46 },
@@ -22,7 +20,6 @@ defineProps({
   tone: { type: String, default: 'ink' },
 });
 const { t } = useI18n();
-const { isAr } = storeToRefs(useUiStore());
 </script>
 
 <style scoped>

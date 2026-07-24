@@ -101,7 +101,7 @@ exports.up = async function up(knex) {
       { min: 120, price: 70 },
     ]));
     t.decimal('late_fee_per_minute', 10, 2).notNullable().defaultTo(0);
-    t.string('center_name').notNullable().defaultTo('فرفشة');
+    t.string('center_name').notNullable().defaultTo('Blend Play & Sip');
     t.string('tagline').notNullable().defaultTo('حيث تبدأ المتعة');
     t.string('primary_color').notNullable().defaultTo('#F97A53');
     t.string('currency').notNullable().defaultTo('SAR');

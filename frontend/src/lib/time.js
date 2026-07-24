@@ -99,6 +99,27 @@ export function money(n, lang = 'ar', currency = 'SAR') {
   return `${s} ${currency}`;
 }
 
+/**
+ * Party/workshop slot as an hour range in Riyadh — e.g. "1–4 PM" / "١–٤ م" —
+ * built from the slot's real start/end so it always matches the booked window.
+ */
+export function slotLabel(startsAt, endsAt, lang = 'ar') {
+  const parse = (ts) => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: ZONE, hour: 'numeric', minute: '2-digit', hour12: true,
+    }).formatToParts(new Date(ts));
+    const get = (t) => parts.find((p) => p.type === t)?.value || '';
+    return { hour: get('hour'), minute: get('minute'), ap: get('dayPeriod') };
+  };
+  const a = parse(startsAt);
+  const b = parse(endsAt);
+  const h = (x) => (x.minute === '00' ? x.hour : `${x.hour}:${x.minute}`);
+  const ap = (p) => (lang === 'ar' ? (p === 'AM' ? 'ص' : 'م') : p);
+  // Collapse to one period label when both ends sit in the same half-day.
+  if (a.ap === b.ap) return `${h(a)}–${h(b)} ${ap(a.ap)}`;
+  return `${h(a)} ${ap(a.ap)} – ${h(b)} ${ap(b.ap)}`;
+}
+
 /** Duration label (30 -> "30 min"/"٣٠ دقيقة", etc.) via i18n keys. */
 export function durationKey(min) {
   if (min === 30) return 'dur30';
