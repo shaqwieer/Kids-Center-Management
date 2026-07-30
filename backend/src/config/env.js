@@ -81,6 +81,13 @@ export const env = {
       appSid: process.env.UNIFONIC_APP_SID || '',
       senderId: process.env.UNIFONIC_SENDER_ID || '',
     },
+    whatsloop: {
+      token: process.env.WHATSLOOP_TOKEN || '',
+      // Tenant-specific subdomain — NOT the generic whatsloop.net host.
+      baseUrl: process.env.WHATSLOOP_BASE_URL || 'https://blend-play-sip.whatsloop.net/api/v1',
+      // Optional; only needed when the account has more than one WhatsApp channel.
+      channelId: process.env.WHATSLOOP_CHANNEL_ID || '',
+    },
   },
 
   payments: {

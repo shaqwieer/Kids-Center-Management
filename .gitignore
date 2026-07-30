@@ -11,6 +11,11 @@ coverage/
 *.tsbuildinfo
 backend/uploads/
 
+# Vendor API spec kept locally for reference while working on the WhatsLoop
+# adapter (644 KB, not needed at runtime — the contract lives in
+# backend/src/whatsapp/providers/whatsloop.js). Remove this line to commit it.
+whatsloop-api.json
+
 # Artifacts from the UI proof scripts (screenshots + throwaway Chrome profiles)
 frontend/scripts/shots/
 frontend/scripts/_*/

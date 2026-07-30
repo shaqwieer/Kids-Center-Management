@@ -13,6 +13,7 @@ import { createLogAdapter } from './providers/log.js';
 import { createMetaAdapter } from './providers/meta.js';
 import { createTwilioAdapter } from './providers/twilio.js';
 import { createUnifonicAdapter } from './providers/unifonic.js';
+import { createWhatsloopAdapter } from './providers/whatsloop.js';
 
 let adapter = null;
 
@@ -32,6 +33,9 @@ export function getAdapter() {
       break;
     case 'unifonic':
       adapter = createUnifonicAdapter(env.whatsapp.unifonic);
+      break;
+    case 'whatsloop':
+      adapter = createWhatsloopAdapter(env.whatsapp.whatsloop);
       break;
     case 'log':
     default:

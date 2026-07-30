@@ -210,8 +210,25 @@ enforced server-side by `requireAuth` / `requireRole`.
 Set in `.env`:
 
 - **Dev / before the account is ready:** `WHATSAPP_ENABLED=false` → every message is logged to the console (and recorded in `notifications`), nothing is sent. The whole system works end-to-end.
+- **WhatsLoop (what this centre uses):** `WHATSAPP_ENABLED=true`, `WHATSAPP_PROVIDER=whatsloop`, `WHATSLOOP_TOKEN=<your key>`, `WHATSLOOP_BASE_URL=https://blend-play-sip.whatsloop.net/api/v1` (your own subdomain — *not* the generic `whatsloop.net`). `WHATSLOOP_CHANNEL_ID` is only needed if the account has more than one connected WhatsApp channel. Messages go out as plain text via `POST /messages/send-text`, so the Settings templates are sent exactly as written — **no pre-approved Meta-style templates to register.**
 - **Meta WhatsApp Cloud API:** `WHATSAPP_ENABLED=true`, `WHATSAPP_PROVIDER=meta`, set `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, and your approved template names (`WHATSAPP_TEMPLATE_WARN5`, `WHATSAPP_TEMPLATE_TIMEUP`, `WHATSAPP_TEMPLATE_WELCOME`).
 - **Swap in a Saudi BSP / other provider:** set `WHATSAPP_PROVIDER=unifonic` (or `twilio`) and its credentials. Adding a new provider = one adapter file in `backend/src/whatsapp/providers/` — no domain changes.
+
+> ⚠️ **Both switches matter.** `WHATSAPP_PROVIDER=whatsloop` on its own sends nothing —
+> while `WHATSAPP_ENABLED=false` the system forces the `log` adapter no matter what the
+> provider says. This is the single most common "why aren't messages sending?" cause.
+
+Verify the integration:
+
+```bash
+cd backend
+node scripts/whatsloop-proof.mjs        # 18 assertions, stubbed fetch — sends nothing
+node scripts/whatsloop-send.mjs 05XXXXXXXX   # sends ONE real message to your own number
+```
+
+WhatsLoop rate limits sends to 30/min. The adapter waits out a short `Retry-After`
+once, and otherwise throws so BullMQ's retry (3 attempts, exponential from 5s) owns it;
+failures land in `notifications.error` with the HTTP status attached.
 
 Message templates (per type, per language) are editable in **Settings**. Variables: `{name}`/`{الاسم}`, `{child}`/`{الطفل}`, `{minutes}`/`{الدقائق}`, `{code}`/`{الرمز}`, `{center}`/`{المركز}`, and `{link}`/`{الرابط}`.
 
@@ -236,7 +253,7 @@ itself has its own toggle in Settings).
 │  │  │                 tenants, users, public
 │  │  ├─ queue/         BullMQ connection, scheduler, worker (version guard)
 │  │  ├─ realtime/      Socket.IO server + Redis emit bridge
-│  │  ├─ whatsapp/      provider-agnostic adapter (log/meta/twilio/unifonic)
+│  │  ├─ whatsapp/      provider-agnostic adapter (log/whatsloop/meta/twilio/unifonic)
 │  │  ├─ payments/      future-ready PaymentProvider placeholder
 │  │  ├─ app.js, routes.js, index.js
 │  │  └─ scripts/       lifecycle-proof, notify-proof, worker-fire-proof, http-smoke, users-proof
