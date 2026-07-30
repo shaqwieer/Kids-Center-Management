@@ -3,6 +3,9 @@ dist/
 build/
 .env
 .env.local
+# Timestamped .env backups taken before a deploy hold PGPASSWORD/JWT_SECRET —
+# the bare `.env` rule above does not match them.
+.env*.bak
 *.log
 npm-debug.log*
 .DS_Store
