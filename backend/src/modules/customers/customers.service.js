@@ -6,6 +6,8 @@ import { db } from '../../config/db.js';
 import { env } from '../../config/env.js';
 import { ApiError } from '../../utils/http.js';
 import { uniqueCustomerCode, makeQrToken } from '../../utils/codes.js';
+import { normalizeLang } from '../../lib/lang.js';
+import { scheduleWelcome } from '../../queue/scheduler.js';
 
 function cardUrl(qrToken) {
   return `${env.appBaseUrl.replace(/\/$/, '')}/c/${qrToken}`;
@@ -20,6 +22,7 @@ function customerView(c, children = []) {
     customer_code: c.customer_code,
     qr_token: c.qr_token,
     consent: c.consent,
+    lang: c.lang || null,
     card_url: cardUrl(c.qr_token),
     children,
     created_at: c.created_at,
@@ -133,7 +136,7 @@ async function insertChildren(trx, customerId, children = []) {
   if (rows.length) await trx('children').insert(rows);
 }
 
-async function createCustomerTx({ tenantId, full_name, phone, national_id, consent, children }) {
+async function createCustomerTx({ tenantId, full_name, phone, national_id, consent, children, lang }) {
   const code = await uniqueCustomerCode((candidate) =>
     db('customers').where({ tenant_id: tenantId, customer_code: candidate }).first().then(Boolean));
 
@@ -147,6 +150,9 @@ async function createCustomerTx({ tenantId, full_name, phone, national_id, conse
         customer_code: code,
         qr_token: makeQrToken(),
         consent: Boolean(consent),
+        // The language she filled the form in. Null falls back to the centre
+        // default at send time rather than being frozen here.
+        lang: normalizeLang(lang),
       })
       .returning('*');
     await insertChildren(trx, c.id, children);
@@ -155,10 +161,27 @@ async function createCustomerTx({ tenantId, full_name, phone, national_id, conse
   });
 }
 
-export async function createCustomer(tenantId, data) {
+/**
+ * Queue the welcome message. Called only AFTER the transaction has committed —
+ * the worker re-reads the customer by id, so an enqueue inside the transaction
+ * could race a job that finds no row. Never throws: a WhatsApp hiccup must not
+ * fail a registration that is already saved.
+ */
+async function queueWelcome(customerId, tenantId, tenantSlug) {
+  try {
+    await scheduleWelcome({ customerId, tenantId, tenantSlug });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[customers] welcome scheduling failed:', err?.message);
+  }
+}
+
+export async function createCustomer(tenantId, data, { tenantSlug = null } = {}) {
   const existing = await db('customers').where({ tenant_id: tenantId, phone: String(data.phone).trim() }).first();
   if (existing) throw ApiError.conflict('A customer with this phone already exists', { customer_id: existing.id });
-  return createCustomerTx({ tenantId, ...data });
+  const created = await createCustomerTx({ tenantId, ...data });
+  await queueWelcome(created.id, tenantId, tenantSlug);
+  return created;
 }
 
 /** Update guardian data + reconcile children (update by id, add new, remove missing). */
@@ -171,6 +194,7 @@ export async function updateCustomer(tenantId, id, data) {
       full_name: data.full_name !== undefined ? String(data.full_name).trim() : c.full_name,
       phone: data.phone !== undefined ? String(data.phone).trim() : c.phone,
       national_id: data.national_id !== undefined ? (data.national_id ? String(data.national_id).trim() : null) : c.national_id,
+      lang: data.lang !== undefined ? normalizeLang(data.lang) : c.lang,
       updated_at: trx.fn.now(),
     });
 
@@ -213,14 +237,17 @@ export async function lookupCustomer(tenantId, { qr, phone }) {
  * Public registration (no auth). Duplicate phone => return the EXISTING customer
  * with already_registered:true (friendly, matches the returning-customer flow).
  */
-export async function publicRegister(tenantId, data) {
+export async function publicRegister(tenantId, data, { tenantSlug = null } = {}) {
   const phone = String(data.phone || '').trim();
   const existing = await db('customers').where({ tenant_id: tenantId, phone }).first();
   if (existing) {
+    // Deliberately NO welcome here: she is already registered, and re-opening
+    // the form must not send her a second "you are registered" message.
     const kids = await childrenOf(existing.id);
     return { ...customerView(existing, kids), already_registered: true };
   }
   const created = await createCustomerTx({ tenantId, ...data, phone, consent: true });
+  await queueWelcome(created.id, tenantId, tenantSlug);
   return { ...created, already_registered: false };
 }
 

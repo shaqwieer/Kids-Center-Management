@@ -84,8 +84,20 @@
             <span class="sec-note">· {{ t('se_wa_hint') }}</span>
           </div>
 
+          <!-- Which of the two columns below is actually sent, when the family
+               has no language of its own on file. -->
+          <div class="inline-num lang-row">
+            <label class="field-label first">{{ t('se_default_lang') }}</label>
+            <select class="fc-input narrow" v-model="form.default_lang">
+              <option value="ar">عربي</option>
+              <option value="en">English</option>
+            </select>
+            <span class="sec-note">· {{ t('se_default_lang_hint') }}</span>
+          </div>
+
           <div v-for="g in waGroups" :key="g.key" class="wa-group">
             <label class="wa-label">{{ t(g.labelKey) }}</label>
+            <p v-if="g.noteKey" class="wa-note">{{ t(g.noteKey) }}</p>
             <div class="wa-fields">
               <div class="wa-field">
                 <span class="wa-lang">عربي</span>
@@ -334,11 +346,40 @@ function printPoster() {
 const colors = ['#F97A53', '#12A594', '#7C5CE0', '#EC6A9C', '#F5A623'];
 
 const waGroups = [
-  { key: 'welcome', labelKey: 'se_wa_welcome', vars: ['{name}', '{الاسم}', '{code}', '{الرمز}'] },
-  // {link} is the mother's one-tap "add an hour" link.
-  { key: 'warn_5', labelKey: 'se_wa_warning', vars: ['{child}', '{الطفل}', '{link}', '{الرابط}'] },
-  { key: 'time_up', labelKey: 'se_wa_overtime', vars: ['{child}', '{الطفل}', '{minutes}', '{الدقائق}'] },
-  { key: 'review', labelKey: 'se_wa_review', vars: ['{name}', '{الاسم}', '{center}', '{المركز}', '{link}', '{الرابط}'] },
+  {
+    key: 'welcome',
+    labelKey: 'se_wa_welcome',
+    noteKey: 'se_wa_welcome_note',
+    vars: ['{name}', '{الاسم}', '{code}', '{الرمز}', '{center}', '{المركز}'],
+  },
+  // {link} is the mother's one-tap "add time" link, and {minutes} is how much
+  // it adds — it tracks the extension setting below instead of being typed in.
+  {
+    key: 'warn_5',
+    labelKey: 'se_wa_warning',
+    noteKey: 'se_wa_warning_note',
+    vars: ['{child}', '{الطفل}', '{minutes}', '{الدقائق}', '{link}', '{الرابط}', '{center}', '{المركز}'],
+  },
+  // {minutes} is deliberately NOT offered here: this message is sent AT the end
+  // of the session, so overtime is always zero at that moment.
+  {
+    key: 'time_up',
+    labelKey: 'se_wa_overtime',
+    noteKey: 'se_wa_overtime_note',
+    vars: ['{child}', '{الطفل}', '{center}', '{المركز}'],
+  },
+  {
+    key: 'review',
+    labelKey: 'se_wa_review',
+    vars: ['{name}', '{الاسم}', '{center}', '{المركز}', '{link}', '{الرابط}'],
+  },
+  {
+    key: 'booking_confirmed',
+    labelKey: 'se_wa_booking',
+    noteKey: 'se_wa_booking_note',
+    vars: ['{name}', '{الاسم}', '{ref}', '{المرجع}', '{date}', '{التاريخ}', '{time}', '{الوقت}',
+      '{count}', '{العدد}', '{amount}', '{المبلغ}', '{center}', '{المركز}'],
+  },
 ];
 
 /**
@@ -378,7 +419,9 @@ onMounted(async () => {
       warn_5: { ar: wt.warn_5?.ar ?? '', en: wt.warn_5?.en ?? '' },
       time_up: { ar: wt.time_up?.ar ?? '', en: wt.time_up?.en ?? '' },
       review: { ar: wt.review?.ar ?? '', en: wt.review?.en ?? '' },
+      booking_confirmed: { ar: wt.booking_confirmed?.ar ?? '', en: wt.booking_confirmed?.en ?? '' },
     };
+    clone.default_lang = clone.default_lang === 'en' ? 'en' : 'ar';
 
     clone.terms_url = clone.terms_url ?? '';
     if (clone.reviews_enabled == null) clone.reviews_enabled = true;
@@ -436,6 +479,7 @@ async function save() {
       review_delay_minutes: Number(form.value.review_delay_minutes),
       guardian_extend_enabled: form.value.guardian_extend_enabled,
       guardian_extend_minutes: Number(form.value.guardian_extend_minutes),
+      default_lang: form.value.default_lang,
     });
     // Reflect the normalised slot list back into the text field.
     slotText.value = {
@@ -639,6 +683,15 @@ async function save() {
   font-weight: 700;
   margin-bottom: 8px;
 }
+/* When a template needs a caveat the variable chips can't carry — e.g. why the
+   overtime message has no minutes in it. */
+.wa-note {
+  margin: -4px 0 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted-3);
+}
+.lang-row { margin-bottom: 18px; }
 /* The ar/en pair sits side by side when the card is wide and stacks once the
    card becomes one column of a multi-column settings grid. */
 .wa-fields {

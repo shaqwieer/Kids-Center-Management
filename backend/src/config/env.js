@@ -70,6 +70,7 @@ export const env = {
         warn_5: process.env.WHATSAPP_TEMPLATE_WARN5 || 'farfasha_warn5',
         time_up: process.env.WHATSAPP_TEMPLATE_TIMEUP || 'farfasha_timeup',
         review: process.env.WHATSAPP_TEMPLATE_REVIEW || 'farfasha_review',
+        booking_confirmed: process.env.WHATSAPP_TEMPLATE_BOOKING || 'farfasha_booking_confirmed',
       },
     },
     twilio: {

@@ -225,7 +225,7 @@ import api from '@/lib/api.js';
 import { useCustomersStore } from '@/stores/customers.js';
 import { useUiStore } from '@/stores/ui.js';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const customers = useCustomersStore();
 const ui = useUiStore();
 
@@ -301,6 +301,9 @@ async function submit() {
       phone: phone.value.trim(),
       national_id: national_id.value || null,
       consent: true,
+      // She filled this form in one language — her WhatsApp messages should
+      // arrive in the same one instead of the centre default.
+      lang: locale.value === 'en' ? 'en' : 'ar',
       children: children.value
         .filter((c) => c.name.trim())
         .map((c) => ({

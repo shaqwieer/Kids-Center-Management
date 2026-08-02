@@ -33,6 +33,9 @@ const registerSchema = z.object({
   phone: z.string().min(6),
   national_id: z.string().optional().nullable(),
   consent: z.literal(true, { errorMap: () => ({ message: 'consent is required' }) }),
+  // The language the form was filled in, so her messages match it. The page
+  // sends its current locale; anything else falls back to the centre default.
+  lang: z.enum(['ar', 'en']).optional().nullable(),
   children: z.array(childSchema).min(1),
 });
 
@@ -44,7 +47,7 @@ router.post(
   validate(registerSchema),
   asyncHandler(async (req, res) => {
     const tenant = await getDefaultTenant();
-    const result = await publicRegister(tenant.id, req.body);
+    const result = await publicRegister(tenant.id, req.body, { tenantSlug: tenant.slug });
     res.status(result.already_registered ? 200 : 201).json({ customer: result });
   }),
 );

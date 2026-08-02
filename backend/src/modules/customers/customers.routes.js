@@ -25,6 +25,8 @@ const createSchema = z.object({
   phone: z.string().min(6),
   national_id: z.string().optional().nullable(),
   consent: z.boolean().optional(),
+  // Which language her WhatsApp messages go out in. Omitted = centre default.
+  lang: z.enum(['ar', 'en']).optional().nullable(),
   children: z.array(childSchema).default([]),
 });
 
@@ -48,7 +50,8 @@ router.get('/:id', asyncHandler(async (req, res) => {
 // Reception may search and open customer records (الاطلاع) but not rewrite them —
 // families create and correct their own data through the public QR page.
 router.post('/', requireRole('manager'), validate(createSchema), asyncHandler(async (req, res) => {
-  res.status(201).json({ customer: await createCustomer(req.user.tenantId, req.body) });
+  const customer = await createCustomer(req.user.tenantId, req.body, { tenantSlug: req.user.tenantSlug });
+  res.status(201).json({ customer });
 }));
 
 router.put('/:id', requireRole('manager'), validate(updateSchema), asyncHandler(async (req, res) => {

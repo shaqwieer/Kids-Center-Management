@@ -19,6 +19,7 @@ import { makeQrToken } from '../../utils/codes.js';
 import { ZONE } from '../../utils/time.js';
 import { getSettings } from '../settings/settings.service.js';
 import { emitToTenant } from '../../realtime/emitter.js';
+import { scheduleBookingConfirmed } from '../../queue/scheduler.js';
 
 export const BOOKING_TYPES = ['party', 'workshop'];
 
@@ -149,6 +150,21 @@ async function nextReference(tenantId, type) {
   return `${prefix}-${Date.now().toString().slice(-6)}`;
 }
 
+/**
+ * Queue the "your booking is confirmed" WhatsApp. Only a CONFIRMED booking gets
+ * one: a public booking sits at `pending` (holding its slot) until staff accept
+ * it, and that transition is what triggers this. Never throws — a messaging
+ * problem must not fail the booking write that already committed.
+ */
+async function queueBookingConfirmed(bookingId, tenantId, tenantSlug) {
+  try {
+    await scheduleBookingConfirmed({ bookingId, tenantId, tenantSlug });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[bookings] confirmation scheduling failed:', err?.message);
+  }
+}
+
 export function bookingView(b) {
   return {
     id: b.id,
@@ -242,6 +258,8 @@ export async function createBooking(tenantId, tenantSlug, data, { userId = null 
 
   const view = bookingView(row);
   emitToTenant(tenantSlug, 'booking:created', { booking: view });
+  // Staff-created bookings are confirmed on the spot, so she hears about it now.
+  if (row.status === 'confirmed') await queueBookingConfirmed(row.id, tenantId, tenantSlug);
   return view;
 }
 
@@ -302,5 +320,12 @@ export async function updateBooking(tenantId, tenantSlug, id, patch) {
   const fresh = await db('bookings').where({ id }).first();
   const view = bookingView(fresh);
   emitToTenant(tenantSlug, 'booking:updated', { booking: view });
+
+  // Gate on the TRANSITION, not the current value: editing the notes of an
+  // already-confirmed booking must not re-announce it. (The notification row is
+  // a second guard, so even a replayed job sends nothing twice.)
+  if (row.status !== 'confirmed' && fresh.status === 'confirmed') {
+    await queueBookingConfirmed(id, tenantId, tenantSlug);
+  }
   return view;
 }

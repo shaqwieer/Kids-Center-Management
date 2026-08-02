@@ -24,6 +24,7 @@ function serialize(row) {
     review_delay_minutes: row.review_delay_minutes,
     guardian_extend_enabled: row.guardian_extend_enabled,
     guardian_extend_minutes: row.guardian_extend_minutes,
+    default_lang: row.default_lang || 'ar',
   };
 }
 
@@ -49,7 +50,11 @@ const updateSchema = z.object({
   primary_color: z.string().optional(),
   currency: z.string().optional(),
   wa_templates: z.object({
-    welcome: langText, warn_5: langText, time_up: langText, review: langText,
+    welcome: langText,
+    warn_5: langText,
+    time_up: langText,
+    review: langText,
+    booking_confirmed: langText,
   }).partial().optional(),
   payments_enabled: z.boolean().optional(),
   terms_url: z.string().url().max(500).nullable().optional().or(z.literal('')),
@@ -65,6 +70,7 @@ const updateSchema = z.object({
   review_delay_minutes: z.number().int().nonnegative().max(10080).optional(),
   guardian_extend_enabled: z.boolean().optional(),
   guardian_extend_minutes: z.number().int().positive().max(600).optional(),
+  default_lang: z.enum(['ar', 'en']).optional(),
 });
 
 router.get('/', asyncHandler(async (req, res) => {

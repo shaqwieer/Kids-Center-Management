@@ -9,9 +9,21 @@
 import { sessionQueue, DEFAULT_JOB_OPTS } from './connection.js';
 import { computeDelays } from '../lib/timing.js';
 
+/**
+ * JOB ID FORMAT — BullMQ rejects a custom id containing ':' UNLESS it splits
+ * into exactly three parts (job.js: `jobId.includes(':') && split(':').length
+ * !== 3` throws "Custom Id cannot contain :"). The versioned ids below are
+ * three-part and legal; anything without a version must use '-' instead.
+ *
+ * `review:<id>` was two-part, so every review enqueue threw — and because
+ * checkout deliberately swallows scheduling errors, the post-visit message was
+ * silently never queued. Keep new ids hyphenated.
+ */
 export const warnJobId = (sessionId, version) => `warn5:${sessionId}:v${version}`;
 export const timeupJobId = (sessionId, version) => `timeup:${sessionId}:v${version}`;
-export const reviewJobId = (sessionId) => `review:${sessionId}`;
+export const reviewJobId = (sessionId) => `review-${sessionId}`;
+export const welcomeJobId = (customerId) => `welcome-${customerId}`;
+export const bookingConfirmedJobId = (bookingId) => `bkconf-${bookingId}`;
 
 /**
  * Enqueue the warn_5 + time_up jobs for the given (already-persisted) version.
@@ -43,6 +55,30 @@ export async function scheduleReview({ sessionId, tenantId, tenantSlug, reviewId
     'session-event',
     { type: 'review', sessionId, tenantId, tenantSlug, reviewId },
     { ...DEFAULT_JOB_OPTS, jobId: reviewJobId(sessionId), delay: Math.max(0, delayMs) },
+  );
+}
+
+/**
+ * Enqueue the registration welcome. Deliberately goes through the queue rather
+ * than sending inline: registration is a form the mother is standing in front
+ * of, and it must not wait on — or fail because of — an outbound HTTP call.
+ * The per-customer job id plus the notifications unique row mean a retried
+ * registration can never produce a second welcome.
+ */
+export async function scheduleWelcome({ customerId, tenantId, tenantSlug, delayMs = 0 }) {
+  await sessionQueue.add(
+    'session-event',
+    { type: 'welcome', customerId, tenantId, tenantSlug },
+    { ...DEFAULT_JOB_OPTS, jobId: welcomeJobId(customerId), delay: Math.max(0, delayMs) },
+  );
+}
+
+/** Enqueue the party/workshop confirmation. Same idempotency story as above. */
+export async function scheduleBookingConfirmed({ bookingId, tenantId, tenantSlug, delayMs = 0 }) {
+  await sessionQueue.add(
+    'session-event',
+    { type: 'booking_confirmed', bookingId, tenantId, tenantSlug },
+    { ...DEFAULT_JOB_OPTS, jobId: bookingConfirmedJobId(bookingId), delay: Math.max(0, delayMs) },
   );
 }
 

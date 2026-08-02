@@ -14,25 +14,34 @@ const crypto = require('crypto');
 const token = () => crypto.randomBytes(16).toString('hex');
 const MIN = 60_000;
 
+// Kept in step with DEFAULTS in settings.service.js. Anything a manager can
+// change elsewhere ({المركز}, {الدقائق}) stays a placeholder — spelling it out
+// makes the message lie as soon as the setting changes.
 const WA_TEMPLATES = {
   welcome: {
-    ar: 'مرحباً {الاسم}! 🎉 تم تسجيلك في فرفشة. احتفظ برمزك للزيارات القادمة: {الرمز}',
-    en: 'Welcome {name}! 🎉 You are registered at Farfasha. Keep your code for next visits: {code}',
+    ar: 'مرحباً {الاسم}! 🎉 تم تسجيلك في {المركز}. احتفظي برمزك للزيارات القادمة: {الرمز}',
+    en: 'Welcome {name}! 🎉 You are registered at {center}. Keep your code for next visits: {code}',
   },
-  // {الرابط} is the mother's one-tap "add an hour" page. Dropping it here would
+  // {الرابط} is the mother's one-tap "add time" page. Dropping it here would
   // silently disable guardian self-extension on every freshly seeded install —
-  // the worker only sends a link the template asks for.
+  // the worker only sends a link the template asks for. Invitation and link stay
+  // on ONE line so stripPlaceholderLines() can remove the whole offer together.
   warn_5: {
-    ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في فرفشة 🕐\nتبين تمديد ساعة إضافية؟ اضغطي هنا: {الرابط}',
-    en: "5 minutes left before {child}'s play time ends at Farfasha 🕐\nWant to add another hour? Tap here: {link}",
+    ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في {المركز} 🕐\nتبين تمديد {الدقائق} دقيقة إضافية؟ اضغطي هنا: {الرابط}',
+    en: "5 minutes left before {child}'s play time ends at {center} 🕐\nWant to add {minutes} more minutes? Tap here: {link}",
   },
+  // No running total: overtime is measured when the job fires, i.e. at the end.
   time_up: {
-    ar: 'انتهى وقت لعب {الطفل}. الوقت الإضافي حتى الآن: {الدقائق} دقيقة.',
-    en: "{child}'s play time is up. Overtime so far: {minutes} minutes.",
+    ar: 'انتهى وقت لعب {الطفل} 🕐\nنرجو التوجّه إلى الاستقبال — أي وقت إضافي يبدأ احتسابه من الآن.',
+    en: "{child}'s play time is up 🕐\nPlease come to reception — any extra time is counted from now.",
   },
   review: {
     ar: 'شكراً لزيارتكم {المركز} 💛 ما رأيك في الزيارة؟ وكيف نخدمك بشكل أفضل؟\n{الرابط}',
     en: 'Thank you for visiting {center} 💛 How was your visit, and how can we serve you better?\n{link}',
+  },
+  booking_confirmed: {
+    ar: 'تم تأكيد حجزك في {المركز} 🎉\nرقم الحجز: {المرجع}\nالتاريخ: {التاريخ} الساعة {الوقت}\nعدد الأطفال: {العدد}\nالمبلغ: {المبلغ}\nبانتظاركم! 💛',
+    en: 'Your booking at {center} is confirmed 🎉\nReference: {ref}\nDate: {date} at {time}\nChildren: {count}\nAmount: {amount}\nSee you soon! 💛',
   },
 };
 

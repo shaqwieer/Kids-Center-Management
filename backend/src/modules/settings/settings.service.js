@@ -8,24 +8,35 @@ const DEFAULTS = {
   tagline: '',
   primary_color: '#F97A53',
   currency: 'SAR',
+  // Every fixed value a manager can change elsewhere is a PLACEHOLDER here —
+  // the centre name and the extension length are settings, so spelling them out
+  // in the text would make the message lie the moment either one changes.
   wa_templates: {
     welcome: {
-      ar: 'مرحباً {الاسم}! 🎉 تم تسجيلك في Blend Play & Sip. احتفظ برمزك للزيارات القادمة: {الرمز}',
-      en: 'Welcome {name}! 🎉 You are registered at Blend Play & Sip. Keep your code for next visits: {code}',
+      ar: 'مرحباً {الاسم}! 🎉 تم تسجيلك في {المركز}. احتفظي برمزك للزيارات القادمة: {الرمز}',
+      en: 'Welcome {name}! 🎉 You are registered at {center}. Keep your code for next visits: {code}',
     },
     warn_5: {
-      ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في Blend Play & Sip 🕐\nتبين تمديد نصف ساعة إضافية؟ اضغطي هنا: {الرابط}',
-      en: '5 minutes left before {child}\'s play time ends at Blend Play & Sip 🕐\nWant to add 30 more minutes? Tap here: {link}',
+      ar: 'تبقّى ٥ دقائق على انتهاء وقت لعب {الطفل} في {المركز} 🕐\nتبين تمديد {الدقائق} دقيقة إضافية؟ اضغطي هنا: {الرابط}',
+      en: '5 minutes left before {child}\'s play time ends at {center} 🕐\nWant to add {minutes} more minutes? Tap here: {link}',
     },
+    // Overtime is measured when the job fires — i.e. AT the end — so it is
+    // always 0. Anything phrased as a running total would be a lie.
     time_up: {
-      ar: 'انتهى وقت لعب {الطفل}. الوقت الإضافي حتى الآن: {الدقائق} دقيقة.',
-      en: '{child}\'s play time is up. Overtime so far: {minutes} minutes.',
+      ar: 'انتهى وقت لعب {الطفل} 🕐\nنرجو التوجّه إلى الاستقبال — أي وقت إضافي يبدأ احتسابه من الآن.',
+      en: '{child}\'s play time is up 🕐\nPlease come to reception — any extra time is counted from now.',
     },
     review: {
       ar: 'شكراً لزيارتكم {المركز} 💛 ما رأيك في الزيارة؟ وكيف نجعل تجربتك أجمل؟\n{الرابط}',
       en: 'Thank you for visiting {center} 💛 How was your visit, and how can we make your experience better?\n{link}',
     },
+    booking_confirmed: {
+      ar: 'تم تأكيد حجزك في {المركز} 🎉\nرقم الحجز: {المرجع}\nالتاريخ: {التاريخ} الساعة {الوقت}\nعدد الأطفال: {العدد}\nالمبلغ: {المبلغ}\nبانتظاركم! 💛',
+      en: 'Your booking at {center} is confirmed 🎉\nReference: {ref}\nDate: {date} at {time}\nChildren: {count}\nAmount: {amount}\nSee you soon! 💛',
+    },
   },
+  // Language for outbound messages when the guardian has no preference of her own.
+  default_lang: 'ar',
   payments_enabled: false,
   terms_url: null,
   booking_config: {
@@ -83,6 +94,7 @@ export async function ensureSettings(tenantId) {
     wa_templates: JSON.stringify(DEFAULTS.wa_templates),
     payments_enabled: DEFAULTS.payments_enabled,
     booking_config: JSON.stringify(DEFAULTS.booking_config),
+    default_lang: DEFAULTS.default_lang,
   });
   return db('settings').where({ tenant_id: tenantId }).first();
 }
@@ -107,6 +119,7 @@ export async function updateSettings(tenantId, patch) {
   if (patch.review_delay_minutes !== undefined) update.review_delay_minutes = patch.review_delay_minutes;
   if (patch.guardian_extend_enabled !== undefined) update.guardian_extend_enabled = patch.guardian_extend_enabled;
   if (patch.guardian_extend_minutes !== undefined) update.guardian_extend_minutes = patch.guardian_extend_minutes;
+  if (patch.default_lang !== undefined) update.default_lang = patch.default_lang;
 
   await ensureSettings(tenantId);
   await db('settings').where({ tenant_id: tenantId }).update(update);

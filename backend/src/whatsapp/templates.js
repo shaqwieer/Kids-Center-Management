@@ -6,10 +6,18 @@
 const ALIASES = {
   name: ['{name}', '{الاسم}'],
   child: ['{child}', '{الطفل}'],
+  // `minutes` is per-template-type by design: the extension length she is being
+  // offered in warn_5, the overtime so far in time_up.
   minutes: ['{minutes}', '{الدقائق}'],
   code: ['{code}', '{الرمز}'],
   link: ['{link}', '{الرابط}'],
   center: ['{center}', '{المركز}'],
+  // Booking confirmations.
+  ref: ['{ref}', '{المرجع}'],
+  date: ['{date}', '{التاريخ}'],
+  time: ['{time}', '{الوقت}'],
+  count: ['{count}', '{العدد}'],
+  amount: ['{amount}', '{المبلغ}'],
 };
 
 /** Replace every placeholder for each provided var. Missing vars are left blank. */
@@ -51,6 +59,8 @@ export function orderedVars(templateType, vars = {}) {
       return [vars.child ?? '', String(vars.minutes ?? '')];
     case 'review':
       return [vars.name ?? '', vars.link ?? ''];
+    case 'booking_confirmed':
+      return [vars.name ?? '', vars.ref ?? '', vars.date ?? '', vars.time ?? '', String(vars.count ?? '')];
     default:
       return Object.values(vars).map((v) => String(v ?? ''));
   }

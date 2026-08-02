@@ -8,6 +8,8 @@ const SELECT = [
   's.status', 's.late_minutes', 's.late_fee', 's.schedule_version', 's.created_at',
   's.guest_token', 's.guardian_added_minutes',
   'c.full_name as customer_full_name', 'c.phone as customer_phone', 'c.customer_code as customer_code',
+  // Which language her WhatsApp messages go out in (null = centre default).
+  'c.lang as customer_lang',
   'ch.name as child_name', 'ch.gender as child_gender', 'ch.age as child_age',
   'ch.has_allergy as child_has_allergy', 'ch.allergy_note as child_allergy_note',
 ];
