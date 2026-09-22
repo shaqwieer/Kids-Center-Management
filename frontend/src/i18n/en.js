@@ -88,7 +88,7 @@ export default {
   se_wa_booking: 'Party / workshop confirmation',
   se_default_lang: 'Message language', se_default_lang_hint: 'Used when the guardian\'s own language is unknown',
   se_wa_welcome_note: 'Sent once, right after a guardian registers. Carries the customer code for the next visit.',
-  se_wa_warning_note: '{minutes} is filled from the self-extend length set below. Keep the invitation and its link on one line — if self-extend is off, that whole line is dropped.',
+  se_wa_warning_note: "{'{minutes}'} is filled from the self-extend length set below. Keep the invitation and its link on one line — if self-extend is off, that whole line is dropped.",
   se_wa_overtime_note: 'Sent at the exact moment the time runs out, so there is no overtime to report yet.',
   se_wa_booking_note: 'Sent when a booking is confirmed. Bookings made on the public page stay pending until staff confirm them.',
   se_branding: 'Center branding', se_center_name: 'Center name', se_tagline: 'Tagline', se_color: 'Primary color',
