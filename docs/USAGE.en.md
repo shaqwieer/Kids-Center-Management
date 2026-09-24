@@ -74,9 +74,9 @@ There are two ways to register a mother and her children:
 
 ### a) Self-registration via the QR poster (no staff needed)
 - A poster at the entrance shows a QR code. Scanning it with a phone opens the **registration page** directly (no login).
-- The mother enters: **full name**, **mobile number**, (national ID is optional), then adds **one or more children**, and agrees to the terms.
+- The mother enters: **full name**, **mobile number**, then adds **one or more children**, and agrees to the terms.
 - For each child she gives: **name**, **date of birth** (the age fills in automatically), **boy/girl**, and **whether the child has any allergy** — answering *Yes* opens a box to describe it.
-- The consent line carries a link to your **centre terms**, so she can read them before agreeing. Set that link under Settings.
+- The consent line carries a link to your **centre terms** page (`/terms`), so she can read them before agreeing. Write the terms under Settings.
 
 > **Allergies are shown where they matter.** A child with a recorded allergy carries a red warning band on their card on the live dashboard the whole time they are playing — staff do not have to go looking for it.
 - On **Create account**, the system generates a short **customer code** (e.g. `FRF-2048`) and a **personal QR card** shown on screen.
@@ -191,8 +191,9 @@ under **Settings → Party & workshop settings**.
 On the **Settings** screen a manager can:
 - Edit **play durations and prices**, at any time.
 - Set the **overtime rate** per minute (set it to zero to disable it).
-- Set the **terms page link** that appears inside the consent statement on the
-  registration and booking forms.
+- Write the **centre terms** (Arabic and English). Customers read them on the `/terms`
+  page, linked from the consent statement on the registration and booking forms. An
+  external terms link can be used instead.
 - Configure **parties and workshops**: base price, price per child, min/max children,
   duration, available time slots, and how much notice a booking needs.
 - Turn **visit reviews** on/off and choose how long after checkout to ask.

@@ -216,8 +216,11 @@ export default {
   xl_hint: 'Covers the period selected above',
 
   // Settings — new sections
-  se_terms: 'Centre terms', se_terms_url: 'Terms page URL',
-  se_terms_hint: 'Shown as a link inside the consent statement before registering or booking',
+  se_terms: 'Centre terms', se_terms_url: 'External terms link (optional)',
+  se_terms_hint: 'Write your terms here. Customers open them from the consent statement before registering or booking. Line breaks are kept.',
+  se_terms_view: 'View the terms page',
+  se_terms_url_hint: 'Only used when no terms are written above',
+  tm_title: 'Centre terms', tm_empty: 'The centre has not published its terms yet.', tm_updated: 'Last updated',
   se_bookings: 'Party & workshop settings',
   se_bk_enabled: 'Allow online booking', se_bk_base: 'Base price', se_bk_per_child: 'Price per child',
   se_bk_min: 'Minimum children', se_bk_max: 'Maximum children', se_bk_duration: 'Duration (min)',

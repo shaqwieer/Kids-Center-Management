@@ -19,6 +19,8 @@ function serialize(row) {
     wa_templates: row.wa_templates,
     payments_enabled: row.payments_enabled,
     terms_url: row.terms_url,
+    terms_ar: row.terms_ar || '',
+    terms_en: row.terms_en || '',
     booking_config: row.booking_config,
     reviews_enabled: row.reviews_enabled,
     review_delay_minutes: row.review_delay_minutes,
@@ -58,6 +60,9 @@ const updateSchema = z.object({
   }).partial().optional(),
   payments_enabled: z.boolean().optional(),
   terms_url: z.string().url().max(500).nullable().optional().or(z.literal('')),
+  // The terms page itself, written by the manager. Plain text — rendered as-is.
+  terms_ar: z.string().max(20000).nullable().optional(),
+  terms_en: z.string().max(20000).nullable().optional(),
   booking_config: z.object({
     party: bookingKind.optional(),
     workshop: bookingKind.optional(),

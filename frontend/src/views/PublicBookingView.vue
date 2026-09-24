@@ -180,7 +180,7 @@
             </span>
             <span class="consent-txt">
               {{ t('pb_consent') }}
-              <a v-if="cfg.terms_url" :href="cfg.terms_url" target="_blank" rel="noopener noreferrer" class="terms-a" @click.stop>{{ t('rg_terms_link') }}</a>
+              <a v-if="termsHref" :href="termsHref" target="_blank" rel="noopener noreferrer" class="terms-a" @click.stop>{{ t('rg_terms_link') }}</a>
             </span>
           </button>
 
@@ -214,6 +214,8 @@ const slotsLoading = ref(false);
 const done = ref(null);
 
 const cfg = ref({});
+// The centre's own /terms page when written in Settings, else its external link.
+const termsHref = computed(() => (cfg.value?.has_terms ? '/terms' : cfg.value?.terms_url || ''));
 const type = ref('party');
 const date = ref('');
 const slot = ref('');

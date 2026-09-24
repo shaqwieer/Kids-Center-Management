@@ -17,7 +17,7 @@ import { db } from '../../config/db.js';
 import { ApiError } from '../../utils/http.js';
 import { makeQrToken } from '../../utils/codes.js';
 import { ZONE } from '../../utils/time.js';
-import { getSettings } from '../settings/settings.service.js';
+import { getSettings, hasTerms } from '../settings/settings.service.js';
 import { emitToTenant } from '../../realtime/emitter.js';
 import { scheduleBookingConfirmed } from '../../queue/scheduler.js';
 
@@ -132,6 +132,7 @@ export async function publicBookingConfig(tenantId) {
     center_name: settings.center_name,
     currency: settings.currency,
     terms_url: settings.terms_url,
+    has_terms: hasTerms(settings),
     party: strip(bc.party),
     workshop: strip(bc.workshop),
     themes: bc.themes || [],

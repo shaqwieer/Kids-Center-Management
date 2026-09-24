@@ -9,6 +9,8 @@ const routes = [
   { path: '/book', name: 'book', component: () => import('@/views/PublicBookingView.vue'), meta: { public: true } },
   { path: '/r/:token', name: 'review', component: () => import('@/views/ReviewView.vue'), meta: { public: true } },
   { path: '/x/:token', name: 'extend', component: () => import('@/views/ExtendView.vue'), meta: { public: true } },
+  // The centre terms, written by the manager in Settings; linked from every consent line.
+  { path: '/terms', name: 'terms', component: () => import('@/views/TermsView.vue'), meta: { public: true } },
 
   { path: '/', name: 'dashboard', component: () => import('@/views/DashboardView.vue'), meta: { auth: true } },
   { path: '/start', name: 'start', component: () => import('@/views/StartSessionView.vue'), meta: { auth: true } },

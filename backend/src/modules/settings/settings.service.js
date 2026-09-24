@@ -39,6 +39,8 @@ const DEFAULTS = {
   default_lang: 'ar',
   payments_enabled: false,
   terms_url: null,
+  terms_ar: null,
+  terms_en: null,
   booking_config: {
     party: {
       enabled: true,
@@ -114,6 +116,8 @@ export async function updateSettings(tenantId, patch) {
   if (patch.wa_templates !== undefined) update.wa_templates = JSON.stringify(patch.wa_templates);
   if (patch.payments_enabled !== undefined) update.payments_enabled = patch.payments_enabled;
   if (patch.terms_url !== undefined) update.terms_url = patch.terms_url || null;
+  if (patch.terms_ar !== undefined) update.terms_ar = patch.terms_ar?.trim() || null;
+  if (patch.terms_en !== undefined) update.terms_en = patch.terms_en?.trim() || null;
   if (patch.booking_config !== undefined) update.booking_config = JSON.stringify(patch.booking_config);
   if (patch.reviews_enabled !== undefined) update.reviews_enabled = patch.reviews_enabled;
   if (patch.review_delay_minutes !== undefined) update.review_delay_minutes = patch.review_delay_minutes;
@@ -124,6 +128,11 @@ export async function updateSettings(tenantId, patch) {
   await ensureSettings(tenantId);
   await db('settings').where({ tenant_id: tenantId }).update(update);
   return db('settings').where({ tenant_id: tenantId }).first();
+}
+
+/** Has the centre written its own terms page (in either language)? */
+export function hasTerms(row) {
+  return Boolean(row?.terms_ar?.trim() || row?.terms_en?.trim());
 }
 
 export { DEFAULTS as DEFAULT_SETTINGS };

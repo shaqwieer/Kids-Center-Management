@@ -148,7 +148,7 @@
           </div>
         </section>
 
-        <!-- 5) Centre terms — the link that sits inside the consent statement -->
+        <!-- 5) Centre terms — the page customers read from the consent statement -->
         <section class="fc-card sec">
           <div class="sec-head">
             <span class="sec-icon" style="background:#E8F2FB;">
@@ -160,8 +160,22 @@
           </div>
           <div class="sec-hint">{{ t('se_terms_hint') }}</div>
 
-          <label class="field-label first" for="se-terms">{{ t('se_terms_url') }}</label>
+          <!-- The terms themselves, served at /terms. Plain text: line breaks are kept. -->
+          <div class="wa-fields">
+            <div class="wa-field">
+              <span class="wa-lang">عربي</span>
+              <textarea class="wa-textarea terms-area" dir="rtl" maxlength="20000" v-model="form.terms_ar"></textarea>
+            </div>
+            <div class="wa-field">
+              <span class="wa-lang">English</span>
+              <textarea class="wa-textarea terms-area" dir="ltr" maxlength="20000" v-model="form.terms_en"></textarea>
+            </div>
+          </div>
+          <a class="terms-view" href="/terms" target="_blank" rel="noopener">{{ t('se_terms_view') }} ↗</a>
+
+          <label class="field-label" for="se-terms">{{ t('se_terms_url') }}</label>
           <input id="se-terms" class="fc-input" dir="ltr" type="url" placeholder="https://…" v-model="form.terms_url" />
+          <div class="sec-hint sm">{{ t('se_terms_url_hint') }}</div>
         </section>
 
         <!-- 6) Parties & workshops -->
@@ -424,6 +438,8 @@ onMounted(async () => {
     clone.default_lang = clone.default_lang === 'en' ? 'en' : 'ar';
 
     clone.terms_url = clone.terms_url ?? '';
+    clone.terms_ar = clone.terms_ar ?? '';
+    clone.terms_en = clone.terms_en ?? '';
     if (clone.reviews_enabled == null) clone.reviews_enabled = true;
     if (clone.review_delay_minutes == null) clone.review_delay_minutes = 45;
     if (clone.guardian_extend_enabled == null) clone.guardian_extend_enabled = true;
@@ -470,6 +486,8 @@ async function save() {
       primary_color: form.value.primary_color,
       wa_templates: form.value.wa_templates,
       terms_url: form.value.terms_url?.trim() || null,
+      terms_ar: form.value.terms_ar || null,
+      terms_en: form.value.terms_en || null,
       booking_config: {
         ...bc,
         party: { ...bc.party, slots: parseSlots(slotText.value.party) },
@@ -692,6 +710,8 @@ async function save() {
   color: var(--muted-3);
 }
 .lang-row { margin-bottom: 18px; }
+.wa-textarea.terms-area { height: 240px; }
+.terms-view { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: underline; }
 /* The ar/en pair sits side by side when the card is wide and stacks once the
    card becomes one column of a multi-column settings grid. */
 .wa-fields {

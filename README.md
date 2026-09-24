@@ -10,7 +10,7 @@ A bilingual (Arabic-default RTL / English) management system for a kids play cen
 
 ## ✨ Features
 
-- **Public QR registration** — a poster QR opens a no-login page where a mother registers herself + her children and gets a personal QR card + short customer code. Per child: name, **date of birth** (age is derived), gender, and an **allergy** yes/no with a free-text note. A configurable **terms link** sits inside the consent statement.
+- **Public QR registration** — a poster QR opens a no-login page where a mother registers herself + her children and gets a personal QR card + short customer code. Per child: name, **date of birth** (age is derived), gender, and an **allergy** yes/no with a free-text note. The consent statement links to the centre's **terms page** (`/terms`), whose text the manager writes in Settings.
 - **Allergy visibility** — a child with a recorded allergy carries a red warning band (icon + text, never colour alone) on their live session card, so staff see it at the moment play starts.
 - **Party & workshop booking link** (`/book`) — a public calendar page: occasion type, month grid, time slot, children count, theme, catering, live price. **Double-booking is impossible**: a Postgres `EXCLUDE USING gist` constraint on the time range means two simultaneous confirms produce exactly one booking and one clean 409. Bookings are reserve-now / **pay at the centre** (no live gateway is integrated).
 - **Guardian self-extension** — the 5-minutes-left WhatsApp message carries a one-tap link (`/x/<token>`) where the mother sees a live countdown and adds an hour herself. It goes through the same server-authoritative `addTime` path, so jobs reschedule and the staff dashboard updates in real time.
@@ -22,7 +22,7 @@ A bilingual (Arabic-default RTL / English) management system for a kids play cen
 - **Reliable scheduled notifications** — on start, two delayed **BullMQ** jobs are enqueued: a *5-minutes-left* warning and a *time-up* alert. **Add Time** re-schedules them and can **never leave an orphaned job** (see *Timing correctness* below).
 - **Live dashboard** — a real-time grid of currently-playing children with progress rings and playing / ending-soon / overtime states, kept in sync across multiple staff devices via **Socket.IO**.
 - **WhatsApp, provider-agnostic** — a swappable adapter (Meta Cloud API default; Twilio / Unifonic stubs). Fully **env-toggleable**: runs end-to-end in a dev/sandbox mode that *logs* messages so the system works before the WhatsApp Business account is ready.
-- **Finance overview** with revenue split across the three income sources (play time / parties / workshops), **settings** (durations & prices, late-fee rate, party & workshop pricing and slots, terms link, review + self-extension toggles, WhatsApp templates, branding), and a **future-ready payments** placeholder (Moyasar / HyperPay / Geidea).
+- **Finance overview** with revenue split across the three income sources (play time / parties / workshops), **settings** (durations & prices, late-fee rate, party & workshop pricing and slots, centre terms (page text or external link), review + self-extension toggles, WhatsApp templates, branding), and a **future-ready payments** placeholder (Moyasar / HyperPay / Geidea).
 
 ## 🧱 Stack
 
@@ -303,6 +303,7 @@ All under `/api`. JWT Bearer required except `/api/auth/login` and `/api/public/
 | GET | `/reviews/summary?period=` | rating rollup |
 | GET | `/reports/export?type=&period=` | **.xlsx** download **(manager)** |
 | GET | `/public/center` | branding + terms link |
+| GET | `/public/terms` | the centre terms page text (ar/en) |
 | GET/POST | `/public/booking…` | config, availability, quote, create, lookup |
 | GET/POST | `/public/review/:token` | read / submit a visit review |
 | GET/POST | `/public/session/:token[/extend]` | guardian countdown + self-extend |

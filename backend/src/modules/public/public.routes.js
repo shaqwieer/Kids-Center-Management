@@ -10,7 +10,7 @@ import { validate } from '../../middleware/validate.js';
 import { rateLimit } from '../../middleware/rateLimit.js';
 import { publicRegister, getPublicCard } from '../customers/customers.service.js';
 import { getDefaultTenant } from '../tenants/tenants.service.js';
-import { getSettings } from '../settings/settings.service.js';
+import { getSettings, hasTerms } from '../settings/settings.service.js';
 import {
   BOOKING_TYPES, availability, createBooking, getPublicBooking, publicBookingConfig, quote,
 } from '../bookings/bookings.service.js';
@@ -57,7 +57,7 @@ router.get('/customers/:qr_token', asyncHandler(async (req, res) => {
   res.json({ customer: await getPublicCard(req.params.qr_token) });
 }));
 
-/** Branding + the terms link the consent checkbox points at. */
+/** Branding + where the consent checkbox's terms link should point. */
 router.get('/center', asyncHandler(async (req, res) => {
   const tenant = await getDefaultTenant();
   const s = await getSettings(tenant.id);
@@ -68,6 +68,23 @@ router.get('/center', asyncHandler(async (req, res) => {
       primary_color: s.primary_color,
       currency: s.currency,
       terms_url: s.terms_url,
+      // true = the centre wrote its terms here, so the link goes to /terms.
+      has_terms: hasTerms(s),
+    },
+  });
+}));
+
+/** The centre's terms page, as the manager wrote it in Settings. */
+router.get('/terms', asyncHandler(async (req, res) => {
+  const tenant = await getDefaultTenant();
+  const s = await getSettings(tenant.id);
+  res.json({
+    terms: {
+      center_name: s.center_name,
+      ar: s.terms_ar || '',
+      en: s.terms_en || '',
+      terms_url: s.terms_url,
+      updated_at: s.updated_at,
     },
   });
 }));

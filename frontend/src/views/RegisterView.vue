@@ -33,19 +33,9 @@
               <input id="rg-name" v-model="full_name" class="fc-input" :placeholder="t('rg_full_name_ph')" autocomplete="name" />
             </div>
 
-            <div class="pair">
-              <div class="field">
-                <label class="lbl" for="rg-phone">{{ t('rg_phone') }}</label>
-                <input id="rg-phone" v-model="phone" class="fc-input" dir="ltr" inputmode="tel" :placeholder="t('rg_phone_ph')" autocomplete="tel" />
-              </div>
-
-              <div class="field">
-                <label class="lbl lbl-row" for="rg-nid">
-                  {{ t('rg_natid') }}
-                  <span class="opt-tag">{{ t('rg_optional') }}</span>
-                </label>
-                <input id="rg-nid" v-model="national_id" class="fc-input" dir="ltr" inputmode="numeric" :placeholder="t('rg_natid_ph')" />
-              </div>
+            <div class="field">
+              <label class="lbl" for="rg-phone">{{ t('rg_phone') }}</label>
+              <input id="rg-phone" v-model="phone" class="fc-input" dir="ltr" inputmode="tel" :placeholder="t('rg_phone_ph')" autocomplete="tel" />
             </div>
           </section>
 
@@ -229,15 +219,16 @@ const { t, locale } = useI18n();
 const customers = useCustomersStore();
 const ui = useUiStore();
 
-// The terms link inside the consent statement is centre-configurable; if no URL
-// is set the consent still reads correctly, just without the link.
+// The terms link inside the consent statement: the centre's own /terms page when
+// the manager has written one, else an external URL, else no link at all (the
+// consent still reads correctly without it).
 const termsUrl = ref('');
 const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
 
 onMounted(async () => {
   try {
     const { data } = await api.get('/public/center');
-    termsUrl.value = data.center.terms_url || '';
+    termsUrl.value = data.center.has_terms ? '/terms' : (data.center.terms_url || '');
   } catch {
     termsUrl.value = '';
   }
@@ -250,7 +241,6 @@ const submitting = ref(false);
 
 const full_name = ref('');
 const phone = ref('');
-const national_id = ref('');
 const consent = ref(false);
 const blankChild = () => ({ name: '', birthdate: '', gender: '', has_allergy: null, allergy_note: '' });
 const children = ref([blankChild()]);
@@ -299,7 +289,6 @@ async function submit() {
     const cust = await customers.register({
       full_name: full_name.value.trim(),
       phone: phone.value.trim(),
-      national_id: national_id.value || null,
       consent: true,
       // She filled this form in one language — her WhatsApp messages should
       // arrive in the same one instead of the centre default.
@@ -334,7 +323,6 @@ function printCard() {
 function reset() {
   full_name.value = '';
   phone.value = '';
-  national_id.value = '';
   consent.value = false;
   children.value = [blankChild()];
   result.value = null;
@@ -395,10 +383,7 @@ function reset() {
 .count-pill { background: #EAF7F4; color: #0E8C7E; font-weight: 800; font-size: 13px; padding: 4px 11px; border-radius: 999px; }
 
 .field { margin-bottom: 14px; }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .lbl { display: block; font-size: 13px; font-weight: 700; color: var(--muted-strong); margin-bottom: 6px; }
-.lbl-row { display: flex; align-items: center; gap: 8px; }
-.opt-tag { background: var(--line-soft); color: var(--muted-3); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
 
 /* children */
 /* auto-fit (not auto-fill) so a lone child fills the pane instead of leaving
@@ -530,7 +515,6 @@ function reset() {
   .lang-fab { top: 14px; inset-inline-end: 14px; height: 36px; padding: 0 12px; }
   .wrap { padding: 0 14px; }
   .pane { padding: 18px 14px 20px; }
-  .pair { grid-template-columns: 1fr; gap: 0; }
   .kids { grid-template-columns: 1fr; }
   .ab-inner { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 14px; }
   .submit-btn { min-width: 0; width: 100%; }
