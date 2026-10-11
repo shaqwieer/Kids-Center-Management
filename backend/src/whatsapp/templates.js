@@ -69,9 +69,17 @@ export function orderedVars(templateType, vars = {}) {
 /**
  * Normalise a local Saudi number to E.164 digits for the API (no '+').
  * 05XXXXXXXX -> 9665XXXXXXXX ; already-international numbers pass through.
+ *
+ * A number typed on an Arabic keyboard arrives as ٠٥٥… — JS `\d` is ASCII-only,
+ * so without the fold below those digits were stripped to an empty string and
+ * WhatsLoop rejected the send with "حقل to مطلوب".
  */
+const toAsciiDigits = (s) => s
+  .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+  .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0));
+
 export function normalizePhone(to, defaultCountry = '966') {
-  let n = String(to || '').replace(/[^\d]/g, '');
+  let n = toAsciiDigits(String(to || '')).replace(/[^\d]/g, '');
   if (!n) return n;
   if (n.startsWith('00')) n = n.slice(2);
   if (n.startsWith('0')) n = defaultCountry + n.slice(1);
