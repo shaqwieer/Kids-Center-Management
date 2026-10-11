@@ -62,6 +62,18 @@ export function formatTime(ts, lang = 'ar', clock24 = false) {
   return `${hour}:${minute} ${ap}`;
 }
 
+/** Today's calendar date in Riyadh as 'YYYY-MM-DD' (the <input type="date"> format). */
+export function todayIso(ts = Date.now()) {
+  return new Date(ts).toLocaleDateString('en-CA', { timeZone: ZONE });
+}
+
+/** Shift a 'YYYY-MM-DD' date by whole days. */
+export function shiftDay(iso, days) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 const AR_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
 const AR_WD_SHORT = { Sun: 'الأحد', Mon: 'الاثنين', Tue: 'الثلاثاء', Wed: 'الأربعاء', Thu: 'الخميس', Fri: 'الجمعة', Sat: 'السبت' };

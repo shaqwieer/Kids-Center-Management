@@ -2,9 +2,11 @@
  * Customers (the mother/guardian) + their children.
  * Shared by staff routes and the public QR registration flow.
  */
+import { DateTime } from 'luxon';
 import { db } from '../../config/db.js';
 import { env } from '../../config/env.js';
 import { ApiError } from '../../utils/http.js';
+import { ZONE } from '../../utils/time.js';
 import { uniqueCustomerCode, makeQrToken } from '../../utils/codes.js';
 import { normalizeLang } from '../../lib/lang.js';
 import { scheduleWelcome } from '../../queue/scheduler.js';
@@ -75,7 +77,48 @@ function childFacts(ch) {
   };
 }
 
-export async function searchCustomers(tenantId, q) {
+function matchCustomer(query, q) {
+  if (!q || !q.trim()) return;
+  const like = `%${q.trim()}%`;
+  query.andWhere((b) => b.whereILike('c.full_name', like)
+    .orWhereILike('c.phone', like)
+    .orWhereILike('c.customer_code', like));
+}
+
+/**
+ * The guardians who came on one Riyadh calendar day — one row each, latest
+ * arrival first, carrying which of their children played and when they first
+ * checked in. Every session status counts: a child still playing has come.
+ */
+async function customersOnDay(tenantId, date, q) {
+  const day = DateTime.fromISO(String(date), { zone: ZONE });
+  if (!day.isValid) throw ApiError.badRequest('Invalid date', { date });
+  // Half-open [start, next day) in UTC, so a 9pm Riyadh visit stays on its day.
+  const start = day.startOf('day');
+  const end = start.plus({ days: 1 });
+
+  const query = db('sessions as s')
+    .join('customers as c', 'c.id', 's.customer_id')
+    .join('children as ch', 'ch.id', 's.child_id')
+    .where('s.tenant_id', tenantId)
+    .andWhere('s.started_at', '>=', start.toUTC().toJSDate())
+    .andWhere('s.started_at', '<', end.toUTC().toJSDate())
+    .groupBy('c.id')
+    .select(
+      'c.id', 'c.full_name', 'c.phone', 'c.customer_code', 'c.qr_token',
+      db.raw('min(s.started_at) as first_in'),
+      db.raw('array_agg(distinct ch.name) as day_children'),
+    )
+    .orderBy('first_in', 'desc')
+    .limit(300);
+  matchCustomer(query, q);
+  const rows = await query;
+  return rows.map((r) => ({ ...r, children_count: r.day_children.length }));
+}
+
+/** Customer list. With `date` ('YYYY-MM-DD') it narrows to that day's visitors. */
+export async function searchCustomers(tenantId, q, date) {
+  if (date) return customersOnDay(tenantId, date, q);
   const query = db('customers as c')
     .leftJoin('children as ch', 'ch.customer_id', 'c.id')
     .where('c.tenant_id', tenantId)
@@ -84,12 +127,7 @@ export async function searchCustomers(tenantId, q) {
     .count('ch.id as children_count')
     .orderBy('c.created_at', 'desc')
     .limit(100);
-  if (q && q.trim()) {
-    const like = `%${q.trim()}%`;
-    query.andWhere((b) => b.whereILike('c.full_name', like)
-      .orWhereILike('c.phone', like)
-      .orWhereILike('c.customer_code', like));
-  }
+  matchCustomer(query, q);
   const rows = await query;
   return rows.map((r) => ({ ...r, children_count: Number(r.children_count) }));
 }

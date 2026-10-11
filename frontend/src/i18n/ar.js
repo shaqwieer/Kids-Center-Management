@@ -79,6 +79,8 @@ export default {
   pr_visits: 'زيارة', pr_print: 'طباعة البطاقة', pr_start: 'بدء جلسة', pr_no_visits: 'لا زيارات بعد',
   pr_played_of: 'لعب', pr_of: 'من', pr_natid: 'رقم الهوية', pr_phone_l: 'الجوال', pr_edit: 'تعديل البيانات',
   pr_search_ph: 'ابحث عن عميل…', pr_save: 'حفظ', pr_cancel: 'إلغاء', pr_updated: 'تم تحديث البيانات',
+  pr_by_day: 'حسب اليوم', pr_all_customers: 'كل العملاء', pr_day: 'تاريخ اليوم', pr_today: 'اليوم', pr_prev_day: 'اليوم السابق', pr_next_day: 'اليوم التالي',
+  pr_day_count: 'الحضور', pr_no_day_visits: 'لا زيارات في هذا اليوم', pr_show_all: 'عرض كل العملاء',
 
   // Settings
   se_title: 'الإعدادات', se_durations: 'مدد اللعب والأسعار', se_durations_hint: 'تظهر هذه الخيارات عند بدء جلسة جديدة',

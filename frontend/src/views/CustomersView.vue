@@ -3,6 +3,37 @@
     <!-- LEFT: customers sidebar -->
     <aside class="sidebar">
       <div class="sb-head">{{ t('pr_customers') }}</div>
+
+      <!-- Whose list: one day's visitors, or everyone on file -->
+      <div class="seg">
+        <button type="button" class="seg-btn" :class="{ on: byDay }" @click="setScope(true)">{{ t('pr_by_day') }}</button>
+        <button type="button" class="seg-btn" :class="{ on: !byDay }" @click="setScope(false)">{{ t('pr_all_customers') }}</button>
+      </div>
+      <template v-if="byDay">
+        <div class="sb-day">
+          <button type="button" class="day-nav" :aria-label="t('pr_prev_day')" :title="t('pr_prev_day')" @click="stepDay(-1)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
+          </button>
+          <input
+            type="date"
+            dir="ltr"
+            class="fc-input day-input"
+            :value="customers.date"
+            :max="today"
+            :aria-label="t('pr_day')"
+            @change="onDate"
+          />
+          <button type="button" class="day-nav" :disabled="isToday" :aria-label="t('pr_next_day')" :title="t('pr_next_day')" @click="stepDay(1)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+          </button>
+        </div>
+        <div class="sb-daylabel">
+          <span class="dl-date">{{ dayText }}</span>
+          <span v-if="isToday" class="dl-today">{{ t('pr_today') }}</span>
+          <span class="dl-count">{{ t('pr_day_count') }} <b>{{ customers.list.length }}</b></span>
+        </div>
+      </template>
+
       <div class="sb-search">
         <input
           v-model="q"
@@ -25,17 +56,22 @@
           >{{ initial(c.full_name) }}</div>
           <div class="sb-meta">
             <div class="sb-name">{{ c.full_name }}</div>
-            <div class="sb-sub">{{ c.children_count }} {{ t('pr_children') }}</div>
+            <div v-if="c.first_in" class="sb-sub">{{ formatTime(c.first_in, ui.locale) }} · {{ c.day_children.join(listSep) }}</div>
+            <div v-else class="sb-sub">{{ c.children_count }} {{ t('pr_children') }}</div>
           </div>
         </button>
-        <div v-if="!customers.list.length" class="sb-empty">{{ t('ss_no_match') }}</div>
+        <div v-if="!customers.list.length" class="sb-empty">
+          {{ emptyText }}
+          <button v-if="byDay" type="button" class="sb-all" @click="setScope(false)">{{ t('pr_show_all') }}</button>
+        </div>
       </div>
     </aside>
 
     <!-- MAIN: profile / edit -->
     <main class="main">
       <div v-if="!cust" class="loading-pane">
-        <div class="fc-spin"></div>
+        <div v-if="booting" class="fc-spin"></div>
+        <div v-else-if="!customers.list.length" class="empty-pane">{{ emptyText }}</div>
       </div>
 
       <template v-else>
@@ -133,7 +169,7 @@
                 v-model="ch.birthdate"
                 type="date"
                 dir="ltr"
-                :max="todayIso"
+                :max="today"
                 class="fc-input sm ce-date"
                 :aria-label="t('rg_birthdate')"
               />
@@ -202,7 +238,7 @@ import BrandLogo from '@/components/BrandLogo.vue';
 import { useCustomersStore } from '@/stores/customers.js';
 import { useUiStore } from '@/stores/ui.js';
 import { avatarColor, initial } from '@/lib/colors.js';
-import { formatDate, durationKey } from '@/lib/time.js';
+import { formatDate, formatTime, dateLabel, durationKey, todayIso, shiftDay } from '@/lib/time.js';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -217,10 +253,23 @@ const editing = ref(false);
 const edit = ref(null);        // editable copy
 const saving = ref(false);
 
+const booting = ref(true);     // first list + detail load still in flight
+
 const activeId = computed(() => cust.value?.id);
 
-// Date picker upper bound (a child can't be born in the future), in Riyadh.
-const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
+// Date picker upper bound (no future birthdates, no future visits), in Riyadh.
+// Re-read on each day action so a screen left open overnight rolls over.
+const today = ref(todayIso());
+
+// --- sidebar day filter -----------------------------------------------------
+const byDay = computed(() => !!customers.date);
+const isToday = computed(() => customers.date === today.value);
+// Noon Riyadh, so the label can't slip to a neighbouring day.
+const dayText = computed(() => (customers.date
+  ? dateLabel(ui.locale, new Date(`${customers.date}T12:00:00+03:00`))
+  : ''));
+const listSep = computed(() => (ui.locale === 'ar' ? '، ' : ', '));
+const emptyText = computed(() => (byDay.value && !q.value.trim() ? t('pr_no_day_visits') : t('ss_no_match')));
 
 /** Whole years from an entered birthdate — the live preview beside the field. */
 function ageOf(ch) {
@@ -271,26 +320,60 @@ watch(cust, (c) => {
 });
 
 onMounted(async () => {
-  // Preserve any existing filtered list across remounts (nav clicks remount us).
-  if (!customers.list.length) {
-    try { await customers.search(''); } catch { ui.toast(t('error_generic'), 'error'); }
+  // A row click remounts us on /customers/:id — keep the list (and the day) it
+  // was clicked from. Arriving from the nav starts fresh on today's visitors.
+  if (!route.params.id || !customers.loaded) {
+    if (!route.params.id && customers.date) customers.date = today.value;
+    try { await customers.loadList(); } catch { ui.toast(t('error_generic'), 'error'); }
   }
   const id = route.params.id || customers.list[0]?.id;
   if (id) await loadDetail(id);
+  booting.value = false;
 });
+
+async function reloadList() {
+  try { await customers.loadList(q.value.trim()); } catch { ui.toast(t('error_generic'), 'error'); }
+  // Nothing open yet (an empty day was showing): open the first match.
+  if (!cust.value && !booting.value && customers.list[0]) await loadDetail(customers.list[0].id);
+}
+
+function setScope(day) {
+  if (day === byDay.value) return;
+  today.value = todayIso();
+  customers.date = day ? today.value : '';
+  reloadList();
+}
+
+function stepDay(n) {
+  today.value = todayIso();
+  const next = shiftDay(customers.date, n);
+  if (next > today.value) return;
+  customers.date = next;
+  reloadList();
+}
+
+function onDate(e) {
+  const v = e.target.value;
+  today.value = todayIso();
+  // A cleared or future date is not a day anyone can have visited — snap back.
+  if (!v || v > today.value) { e.target.value = customers.date; return; }
+  customers.date = v;
+  reloadList();
+}
 
 // --- sidebar search (debounced ~250ms) --------------------------------------
 let searchTimer = null;
 function onSearch() {
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(async () => {
-    try { await customers.search(q.value.trim()); } catch { ui.toast(t('error_generic'), 'error'); }
-  }, 250);
+  searchTimer = setTimeout(reloadList, 250);
 }
 onBeforeUnmount(() => clearTimeout(searchTimer));
 
 function pick(id) {
   if (id === activeId.value) return;
+  // Already the routed customer (another one was opened in place): no navigation
+  // would fire, so load it directly.
+  if (id === route.params.id) { loadDetail(id); return; }
   router.push({ name: 'customer', params: { id } });
 }
 
@@ -338,7 +421,7 @@ async function save() {
     ui.toast(t('pr_updated'), 'success');
     // Reload the detail + refresh the sidebar list.
     await loadDetail(cust.value.id);
-    try { await customers.search(q.value.trim()); } catch { /* keep old list on failure */ }
+    try { await customers.loadList(q.value.trim()); } catch { /* keep old list on failure */ }
     editing.value = false;
     edit.value = null;
   } catch {
@@ -377,6 +460,37 @@ function printCard() {
   font-size: 16px;
   color: var(--ink);
 }
+.seg { display: flex; gap: 6px; padding: 0 12px 10px; }
+.seg-btn {
+  flex: 1; height: 40px; min-width: 0;
+  border: 2px solid var(--line-3); border-radius: 12px; background: #fff;
+  font-family: var(--font-body); font-weight: 700; font-size: 13.5px; color: var(--muted-strong);
+  cursor: pointer;
+}
+.seg-btn.on { border-color: var(--brand); background: #FFF3ED; color: var(--accent); }
+.sb-day { display: flex; align-items: center; gap: 6px; padding: 0 12px 8px; }
+.day-input { flex: 1; min-width: 0; height: 44px; padding: 0 8px; font-size: 14px; text-align: center; }
+.day-nav {
+  width: 38px; height: 44px; flex: none;
+  border: 2px solid var(--line-3); border-radius: 12px; background: #fff;
+  color: var(--muted-strong); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.day-nav:hover:not(:disabled) { border-color: var(--brand); color: var(--accent); }
+.day-nav:disabled { opacity: .4; cursor: not-allowed; }
+/* Chevrons are drawn for LTR; in Arabic "previous" sits on the right. */
+[dir="rtl"] .day-nav svg { transform: scaleX(-1); }
+.sb-daylabel {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  padding: 0 14px 10px;
+  font-size: 12.5px; font-weight: 700; color: var(--muted-strong);
+}
+.dl-today {
+  background: #EAF7F4; color: #0E8C7E;
+  padding: 2px 8px; border-radius: 999px; font-size: 11.5px;
+}
+.dl-count { margin-inline-start: auto; color: var(--muted-3); font-weight: 600; }
+.dl-count b { color: var(--ink); }
 .sb-search { padding: 0 12px 10px; }
 .sb-search .fc-input { height: 44px; font-size: 14px; }
 .sb-list {
@@ -411,11 +525,21 @@ function printCard() {
   font-weight: 700; font-size: 14.5px; color: var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sb-sub { font-size: 12px; color: var(--muted-3); }
+.sb-sub {
+  font-size: 12px; color: var(--muted-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .sb-empty {
   padding: 24px 12px; text-align: center;
   color: var(--muted-3); font-size: 13.5px; font-weight: 600;
 }
+.sb-all {
+  display: block; margin: 12px auto 0;
+  border: none; background: transparent; cursor: pointer;
+  font-family: var(--font-body); font-weight: 700; font-size: 13.5px; color: var(--accent);
+  text-decoration: underline;
+}
+.empty-pane { color: var(--muted-3); font-weight: 600; font-size: 15px; }
 
 /* ---- Main ---- */
 .main {

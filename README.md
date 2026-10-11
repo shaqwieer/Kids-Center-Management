@@ -283,7 +283,7 @@ All under `/api`. JWT Bearer required except `/api/auth/login` and `/api/public/
 |--------|------|---------|
 | POST | `/auth/login` | staff login → `{ token, user }` |
 | GET | `/auth/me` | current user |
-| GET | `/customers?search=` | search customers |
+| GET | `/customers?search=&date=` | search customers; `date=YYYY-MM-DD` narrows to that day's visitors (Riyadh) |
 | GET | `/customers/:id` | customer + children + visit history |
 | POST/PUT | `/customers[/:id]` | create / update (guardian + children) |
 | GET | `/customers/lookup?qr=&phone=` | resolve for Start Session |

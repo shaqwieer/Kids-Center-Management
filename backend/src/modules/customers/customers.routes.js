@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { asyncHandler } from '../../utils/http.js';
+import { asyncHandler, ApiError } from '../../utils/http.js';
 import { validate } from '../../middleware/validate.js';
 import { requireAuth, requireRole } from '../../middleware/auth.js';
 import {
@@ -34,8 +34,13 @@ const updateSchema = createSchema.partial().extend({
   children: z.array(childSchema).optional(),
 });
 
+// `?date=YYYY-MM-DD` narrows the list to the guardians who visited that day.
 router.get('/', asyncHandler(async (req, res) => {
-  res.json({ customers: await searchCustomers(req.user.tenantId, req.query.search) });
+  const { search, date } = req.query;
+  if (date !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) {
+    throw ApiError.badRequest('Invalid date', { date });
+  }
+  res.json({ customers: await searchCustomers(req.user.tenantId, search, date) });
 }));
 
 router.get('/lookup', asyncHandler(async (req, res) => {

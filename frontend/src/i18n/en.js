@@ -79,6 +79,8 @@ export default {
   pr_visits: 'visits', pr_print: 'Print card', pr_start: 'Start session', pr_no_visits: 'No visits yet',
   pr_played_of: 'played', pr_of: 'of', pr_natid: 'National ID', pr_phone_l: 'Phone', pr_edit: 'Edit data',
   pr_search_ph: 'Search customer…', pr_save: 'Save', pr_cancel: 'Cancel', pr_updated: 'Customer updated',
+  pr_by_day: 'By day', pr_all_customers: 'All customers', pr_day: 'Day', pr_today: 'Today', pr_prev_day: 'Previous day', pr_next_day: 'Next day',
+  pr_day_count: 'Visitors', pr_no_day_visits: 'No visits on this day', pr_show_all: 'Show all customers',
 
   // Settings
   se_title: 'Settings', se_durations: 'Play durations & prices', se_durations_hint: 'These options appear when starting a new session',

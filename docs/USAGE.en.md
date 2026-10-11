@@ -91,6 +91,9 @@ There are two ways to register a mother and her children:
 
 ## 3) Print / scan the QR card
 
+- **Who came on a given day:** the **Customers** screen opens on **today's visitors** — each
+  guardian with the children who came and their check-in time. Use the arrows or the date
+  box to look at another day, or **All customers** for everyone on file.
 - **Printing:** open the customer's profile (**Customers** screen) — the **Personal card** shows the QR and customer code; press **Print card**.
 - **Scanning on the next visit:** start a session, press **Open camera**, and hold the
   mother's card up to it. The moment it reads the code, she and her children appear —
