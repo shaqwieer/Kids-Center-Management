@@ -1,5 +1,5 @@
 <template>
-  <header class="hdr">
+  <header class="hdr" :class="{ mgr: auth.isManager }">
     <!-- Phones get a drawer instead of an overflowing row of tabs. -->
     <button class="burger" :aria-label="t('menu')" :aria-expanded="open" @click="open = true">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true">
@@ -208,14 +208,22 @@ onBeforeUnmount(() => { document.body.style.overflow = ''; });
 /* The header sheds low-value controls as it narrows. A manager now has eight
    nav items with long Arabic labels, so the ladder starts much higher than it
    used to — at 1024px the old thresholds overflowed the row off the LEFT edge
-   (RTL), which is exactly the "doesn't open properly" symptom. Every rung
-   moved up when the Vouchers tab arrived: without that, the register label
-   wrapped onto two lines and Log out was pushed off the left edge at ~1150-1200. */
-@media (max-width: 1560px) { .me-meta { display: none; } }
-@media (max-width: 1460px) { .clock { display: none; } }
-@media (max-width: 1360px) { .reg-lbl { display: none; } .reg { padding: 0 12px; } }
-@media (max-width: 1260px) { .me { display: none; } }
-@media (max-width: 1200px) { .brand-text-hide :deep(.name), .brand-text-hide :deep(.tag) { display: none; } }
+   (RTL), which is exactly the "doesn't open properly" symptom. */
+@media (max-width: 1440px) { .me-meta { display: none; } }
+@media (max-width: 1340px) { .clock { display: none; } }
+@media (max-width: 1260px) { .reg-lbl { display: none; } .reg { padding: 0 12px; } }
+@media (max-width: 1200px) { .me { display: none; } }
+@media (max-width: 1150px) { .brand-text-hide :deep(.name), .brand-text-hide :deep(.tag) { display: none; } }
+
+/* A manager's row has eight tabs (Vouchers made it eight), so for them every
+   rung sits ~100px higher: on the ladder above, the register label wrapped onto
+   two lines and Log out was pushed off the left edge at ~1150-1200px.
+   Reception's four tabs keep the original ladder (and the clock). */
+@media (max-width: 1560px) { .hdr.mgr .me-meta { display: none; } }
+@media (max-width: 1460px) { .hdr.mgr .clock { display: none; } }
+@media (max-width: 1360px) { .hdr.mgr .reg-lbl { display: none; } .hdr.mgr .reg { padding: 0 12px; } }
+@media (max-width: 1260px) { .hdr.mgr .me { display: none; } }
+@media (max-width: 1200px) { .hdr.mgr .brand-text-hide :deep(.name), .hdr.mgr .brand-text-hide :deep(.tag) { display: none; } }
 
 /* ...and below this the tab row can no longer fit at all, so it becomes a
    drawer. Seven nav items simply do not survive a phone viewport, and squeezing
