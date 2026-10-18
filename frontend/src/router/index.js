@@ -9,6 +9,8 @@ const routes = [
   { path: '/book', name: 'book', component: () => import('@/views/PublicBookingView.vue'), meta: { public: true } },
   { path: '/r/:token', name: 'review', component: () => import('@/views/ReviewView.vue'), meta: { public: true } },
   { path: '/x/:token', name: 'extend', component: () => import('@/views/ExtendView.vue'), meta: { public: true } },
+  // The gift-voucher card its QR opens — printable, and shareable as a link.
+  { path: '/v/:token', name: 'voucher', component: () => import('@/views/VoucherView.vue'), meta: { public: true } },
   // The centre terms, written by the manager in Settings; linked from every consent line.
   { path: '/terms', name: 'terms', component: () => import('@/views/TermsView.vue'), meta: { public: true } },
 
@@ -22,6 +24,7 @@ const routes = [
   // Finance, insights and the team are manager-only — the API enforces this too.
   { path: '/finance', name: 'finance', component: () => import('@/views/FinanceView.vue'), meta: { auth: true, role: 'manager' } },
   { path: '/insights', name: 'insights', component: () => import('@/views/InsightsView.vue'), meta: { auth: true, role: 'manager' } },
+  { path: '/vouchers', name: 'vouchers', component: () => import('@/views/VouchersView.vue'), meta: { auth: true, role: 'manager' } },
   { path: '/team', name: 'team', component: () => import('@/views/TeamView.vue'), meta: { auth: true, role: 'manager' } },
 
   { path: '/:pathMatch(.*)*', redirect: '/' },

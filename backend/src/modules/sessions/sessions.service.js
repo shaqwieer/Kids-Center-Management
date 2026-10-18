@@ -14,8 +14,9 @@ import { emitToTenant } from '../../realtime/emitter.js';
 import { scheduleJobs, removeJobs, scheduleReview } from '../../queue/scheduler.js';
 import { makeQrToken } from '../../utils/codes.js';
 import { ensureReviewForSession } from '../reviews/reviews.service.js';
+import { claimVoucher } from '../vouchers/vouchers.service.js';
 import {
-  getSessionRow, listActiveRows, insertSession, updateSession, toSessionDTO,
+  getSessionRow, listActiveRows, updateSession, toSessionDTO,
 } from './sessions.repo.js';
 
 async function loadSettingsView(tenantId) {
@@ -38,8 +39,16 @@ export async function getSessionDTO(tenantId, sessionId) {
 /**
  * Start one session PER selected child (all with the same duration/start).
  * Schedules warn_5 + time_up jobs and emits `session:created` for each.
+ *
+ * With `voucherCode`, one child's visit is paid by a gift voucher: the voucher
+ * is claimed and the sessions inserted in ONE transaction (so a voucher can
+ * never be spent twice, nor burnt by a start that then fails), and that
+ * session carries the voucher's value as its `discount`. Jobs are scheduled
+ * only after the commit.
  */
-export async function startSessions({ tenantId, tenantSlug, userId, customerId, childIds, durationMinutes }) {
+export async function startSessions({
+  tenantId, tenantSlug, userId, customerId, childIds, durationMinutes, voucherCode = null, voucherChildId = null,
+}) {
   const settings = await getSettings(tenantId);
   const durView = { durations: settings.durations, currency: settings.currency };
 
@@ -48,6 +57,10 @@ export async function startSessions({ tenantId, tenantSlug, userId, customerId, 
 
   if (!Array.isArray(childIds) || childIds.length === 0) {
     throw ApiError.badRequest('At least one child is required');
+  }
+  const voucherChild = voucherCode ? (voucherChildId || childIds[0]) : null;
+  if (voucherChild && !childIds.includes(voucherChild)) {
+    throw ApiError.badRequest('The voucher child is not one of the selected children');
   }
 
   const customer = await db('customers').where({ id: customerId, tenant_id: tenantId }).first();
@@ -62,23 +75,48 @@ export async function startSessions({ tenantId, tenantSlug, userId, customerId, 
   const endsAtMs = computeEndsAt(nowMs, durationMinutes);
   const startedAt = new Date(nowMs);
   const endsAt = new Date(endsAtMs);
+  const basePrice = priceForDuration(settings.durations, durationMinutes);
+
+  const ids = await db.transaction(async (trx) => {
+    let voucher = null;
+    if (voucherCode) voucher = await claimVoucher(trx, { tenantId, userId, input: voucherCode });
+
+    const out = [];
+    for (const child of children) {
+      const usesVoucher = voucher && child.id === voucherChild;
+      // A voucher covers up to its own duration's price, never more than the visit.
+      const voucherValue = usesVoucher
+        ? (priceForDuration(settings.durations, voucher.duration_minutes) || basePrice)
+        : 0;
+      // eslint-disable-next-line no-await-in-loop
+      const [row] = await trx('sessions').insert({
+        tenant_id: tenantId,
+        customer_id: customerId,
+        child_id: child.id,
+        duration_minutes: durationMinutes,
+        started_at: startedAt,
+        ends_at: endsAt,
+        status: 'active',
+        started_by: userId,
+        schedule_version: 1,
+        // Opaque link the mother taps from her WhatsApp warning to add an hour.
+        guest_token: makeQrToken(),
+        voucher_id: usesVoucher ? voucher.id : null,
+        discount: Math.min(voucherValue, basePrice),
+      }).returning('id');
+      if (usesVoucher) {
+        // eslint-disable-next-line no-await-in-loop
+        await trx('vouchers').where({ id: voucher.id }).update({ redeemed_session_id: row.id });
+      }
+      out.push(row.id);
+    }
+    return out;
+  });
 
   const created = [];
-  for (const child of children) {
+  for (const id of ids) {
     // eslint-disable-next-line no-await-in-loop
-    const row = await insertSession({
-      tenant_id: tenantId,
-      customer_id: customerId,
-      child_id: child.id,
-      duration_minutes: durationMinutes,
-      started_at: startedAt,
-      ends_at: endsAt,
-      status: 'active',
-      started_by: userId,
-      schedule_version: 1,
-      // Opaque link the mother taps from her WhatsApp warning to add an hour.
-      guest_token: makeQrToken(),
-    });
+    const row = await getSessionRow(id);
     // eslint-disable-next-line no-await-in-loop
     await scheduleJobs({ sessionId: row.id, tenantId, tenantSlug, endsAtMs, version: 1, nowMs });
     const dto = toSessionDTO(row, durView);

@@ -38,6 +38,23 @@ async function busyBuckets(tenantId, start, end) {
   return rows.map((r) => ({ weekday: Number(r.weekday), hour: Number(r.hour), count: Number(r.count) }));
 }
 
+/** Play income of one visit: price less any gift-voucher discount, plus late fees. */
+function playRevenue(r, durations) {
+  const base = Math.max(0, priceForDuration(durations, r.duration_minutes) - (Number(r.discount) || 0));
+  return base + (Number(r.late_fee) || 0);
+}
+
+/** Gift vouchers sold (not cancelled) — income on the sale day. */
+function soldVouchersSince(tenantId, since, until = null) {
+  const q = db('vouchers')
+    .where({ tenant_id: tenantId })
+    .whereNot('status', 'void')
+    .andWhere('sold_price', '>', 0)
+    .andWhere('created_at', '>=', since);
+  if (until) q.andWhere('created_at', '<=', until);
+  return q.select('sold_price', 'created_at');
+}
+
 /** Revenue + visit counts per calendar month for the last N months (trend line). */
 async function monthlyTrend(tenantId, months, durations) {
   const since = DateTime.now().setZone(ZONE).minus({ months: months - 1 }).startOf('month');
@@ -45,13 +62,15 @@ async function monthlyTrend(tenantId, months, durations) {
     .where({ tenant_id: tenantId })
     .andWhere('status', 'completed')
     .andWhere('ended_at', '>=', since.toUTC().toJSDate())
-    .select('duration_minutes', 'late_fee', 'ended_at', 'customer_id');
+    .select('duration_minutes', 'late_fee', 'discount', 'ended_at', 'customer_id');
 
   const bookingRows = await db('bookings')
     .where({ tenant_id: tenantId })
     .whereIn('status', ['confirmed', 'completed'])
     .andWhere('starts_at', '>=', since.toUTC().toJSDate())
     .select('amount', 'starts_at', 'type');
+
+  const voucherRows = await soldVouchersSince(tenantId, since.toUTC().toJSDate());
 
   const buckets = new Map();
   for (let i = 0; i < months; i += 1) {
@@ -61,6 +80,7 @@ async function monthlyTrend(tenantId, months, durations) {
       sessions: 0,
       session_revenue: 0,
       booking_revenue: 0,
+      voucher_revenue: 0,
       revenue: 0,
     });
   }
@@ -70,7 +90,7 @@ async function monthlyTrend(tenantId, months, durations) {
     const b = buckets.get(key);
     if (!b) continue; // eslint-disable-line no-continue
     b.sessions += 1;
-    b.session_revenue += priceForDuration(durations, r.duration_minutes) + (Number(r.late_fee) || 0);
+    b.session_revenue += playRevenue(r, durations);
   }
   for (const r of bookingRows) {
     const key = DateTime.fromJSDate(new Date(r.starts_at)).setZone(ZONE).toFormat('yyyy-MM');
@@ -78,9 +98,15 @@ async function monthlyTrend(tenantId, months, durations) {
     if (!b) continue; // eslint-disable-line no-continue
     b.booking_revenue += Number(r.amount) || 0;
   }
+  for (const v of voucherRows) {
+    const key = DateTime.fromJSDate(new Date(v.created_at)).setZone(ZONE).toFormat('yyyy-MM');
+    const b = buckets.get(key);
+    if (!b) continue; // eslint-disable-line no-continue
+    b.voucher_revenue += Number(v.sold_price) || 0;
+  }
 
   const out = [...buckets.values()];
-  for (const b of out) b.revenue = Math.round((b.session_revenue + b.booking_revenue) * 100) / 100;
+  for (const b of out) b.revenue = Math.round((b.session_revenue + b.booking_revenue + b.voucher_revenue) * 100) / 100;
 
   // Month-over-month growth on the last two closed buckets.
   const prev = out[out.length - 2];
@@ -121,7 +147,7 @@ export async function insights(tenantId, { period = 'month', lang = 'ar' } = {})
     .where({ tenant_id: tenantId })
     .andWhere('status', 'completed')
     .andWhereBetween('ended_at', [start, end])
-    .select('duration_minutes', 'late_fee', 'started_at', 'ended_at', 'customer_id', 'child_id');
+    .select('duration_minutes', 'late_fee', 'discount', 'started_at', 'ended_at', 'customer_id', 'child_id');
 
   const avgDuration = periodSessions.length
     ? Math.round(periodSessions.reduce((s, r) => s + r.duration_minutes, 0) / periodSessions.length)
@@ -166,9 +192,9 @@ export async function insights(tenantId, { period = 'month', lang = 'ar' } = {})
   })).sort((a, b) => b.count - a.count);
 
   // Income by source — play time vs parties vs workshops.
-  const sessionRevenue = periodSessions.reduce(
-    (s, r) => s + priceForDuration(durations, r.duration_minutes) + (Number(r.late_fee) || 0), 0,
-  );
+  const sessionRevenue = periodSessions.reduce((s, r) => s + playRevenue(r, durations), 0);
+  const voucherRevenue = (await soldVouchersSince(tenantId, start, end))
+    .reduce((s, v) => s + Number(v.sold_price), 0);
   const bookingRows = await db('bookings')
     .where({ tenant_id: tenantId })
     .whereIn('status', ['confirmed', 'completed'])
@@ -225,6 +251,7 @@ export async function insights(tenantId, { period = 'month', lang = 'ar' } = {})
       { key: 'play', amount: Math.round(sessionRevenue * 100) / 100, color: '#F97A53' },
       { key: 'parties', amount: Math.round(partyRevenue * 100) / 100, color: '#7C5CE0' },
       { key: 'workshops', amount: Math.round(workshopRevenue * 100) / 100, color: '#12A594' },
+      { key: 'vouchers', amount: Math.round(voucherRevenue * 100) / 100, color: '#EC6A9C' },
     ],
     duration_mix: durationMix,
     gender_mix: {

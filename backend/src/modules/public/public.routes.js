@@ -16,6 +16,7 @@ import {
 } from '../bookings/bookings.service.js';
 import { getPublicReview, submitReview } from '../reviews/reviews.service.js';
 import { getGuestSession, guardianExtend } from '../sessions/sessions.service.js';
+import { getPublicVoucher } from '../vouchers/vouchers.service.js';
 
 const router = Router();
 
@@ -180,5 +181,11 @@ router.post(
     res.json({ session: await guardianExtend(req.params.token) });
   }),
 );
+
+// ---- gift voucher card (what the QR on a voucher opens) --------------------
+
+router.get('/voucher/:token', asyncHandler(async (req, res) => {
+  res.json({ voucher: await getPublicVoucher(req.params.token) });
+}));
 
 export default router;

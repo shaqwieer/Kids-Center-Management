@@ -40,6 +40,7 @@
                 <div class="scan-hint">{{ t('ss_scan_hint') }}</div>
                 <button class="scan-btn" @click="scanning = true">{{ t('ss_scan_btn') }}</button>
                 <p v-if="scanError" class="scan-err" role="alert">{{ t(scanError) }}</p>
+                <p v-if="voucherInput && !scanError" class="scan-ok" role="status">{{ t('vc_scan_noted') }}</p>
               </template>
 
               <QrScanner v-else @detected="onScanned" @cancel="scanning = false" />
@@ -177,10 +178,60 @@
               <span class="summary-k">{{ t('ss_duration') }}</span>
               <span class="summary-v">{{ durLabel(durationMin) }}</span>
             </div>
+            <div v-if="voucher" class="summary-row">
+              <span class="summary-k">{{ t('vc_discount') }} · <span dir="ltr">{{ voucher.code }}</span></span>
+              <span class="summary-v vc-minus">{{ money(discount, ui.locale, currency) }}</span>
+            </div>
             <div class="summary-total">
               <span class="summary-total-k">{{ t('ss_total') }}</span>
-              <span class="summary-total-v">{{ money((selectedDuration?.price || 0) * selectedChildIds.length, ui.locale, currency) }}</span>
+              <span class="summary-total-v">{{ money(grossTotal - discount, ui.locale, currency) }}</span>
             </div>
+          </div>
+
+          <!-- Gift voucher: scan its QR or type the code printed under it. -->
+          <div class="vc-box">
+            <template v-if="voucher">
+              <div class="vc-applied">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0E8C7E" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                <div class="vc-applied-txt">
+                  <b>{{ t('vc_applied') }}</b> — {{ durLabel(voucher.duration_minutes) }}
+                  <span v-if="voucher.recipient_name"> · {{ voucher.recipient_name }}</span>
+                </div>
+                <button class="vc-remove" type="button" @click="removeVoucher">{{ t('se_remove') }}</button>
+              </div>
+              <div v-if="selectedChildIds.length > 1" class="vc-child">
+                <label class="vc-lbl" for="vc-child">{{ t('vc_for_child') }}</label>
+                <select id="vc-child" v-model="voucherChildId" class="vc-select">
+                  <option v-for="ch in selectedChildren" :key="ch.id" :value="ch.id">{{ ch.name }}</option>
+                </select>
+              </div>
+            </template>
+
+            <template v-else-if="voucherOpen">
+              <div class="vc-lbl">{{ t('vc_enter') }}</div>
+              <div v-if="!voucherScanning" class="vc-row">
+                <input
+                  v-model="voucherInput"
+                  class="vc-input"
+                  dir="ltr"
+                  autocapitalize="characters"
+                  autocomplete="off"
+                  placeholder="GV-XXXXXX"
+                  @keydown.enter.prevent="applyVoucher"
+                />
+                <button class="vc-apply" type="button" :disabled="!voucherInput.trim() || voucherBusy" @click="applyVoucher">{{ t('vc_apply') }}</button>
+                <button class="vc-scan" type="button" :aria-label="t('ss_scan_btn')" @click="voucherScanning = true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M14 14h3v3M20 14v3M17 20h3v-3" /></svg>
+                </button>
+              </div>
+              <QrScanner v-else @detected="onVoucherScanned" @cancel="voucherScanning = false" />
+              <p v-if="voucherError" class="scan-err" role="alert">{{ t(voucherError) }}</p>
+            </template>
+
+            <button v-else class="vc-open" type="button" @click="voucherOpen = true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" /></svg>
+              {{ t('vc_have') }}
+            </button>
           </div>
           <div class="confirm-hint">{{ t('ss_confirm_hint') }}</div>
         </template>
@@ -212,6 +263,7 @@ import { useUiStore } from '@/stores/ui.js';
 import { avatarColor, initial } from '@/lib/colors.js';
 import { money, durationKey } from '@/lib/time.js';
 import QrScanner from '@/components/QrScanner.vue';
+import { useVouchersStore } from '@/stores/vouchers.js';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -220,6 +272,7 @@ const sessions = useSessionsStore();
 const customers = useCustomersStore();
 const settings = useSettingsStore();
 const ui = useUiStore();
+const vouchers = useVouchersStore();
 
 const step = ref(1);
 const customer = ref(null);          // full customer (with children)
@@ -232,6 +285,15 @@ const selectedChildIds = ref([]);
 const durationMin = ref(null);
 const starting = ref(false);
 const searchInput = ref(null);
+
+// Gift voucher (optional, pays one child's visit).
+const voucher = ref(null);           // looked-up voucher once applied
+const voucherInput = ref('');        // typed code or scanned QR text
+const voucherOpen = ref(false);
+const voucherScanning = ref(false);
+const voucherBusy = ref(false);
+const voucherError = ref('');        // i18n key
+const voucherChildId = ref(null);
 
 let searchTimer = null;
 
@@ -255,6 +317,18 @@ const durations = computed(() => settings.data?.durations || []);
 const selectedDuration = computed(() => durations.value.find((d) => d.min === durationMin.value) || null);
 
 const noResults = computed(() => searched.value && search.value.trim() !== '' && results.value.length === 0);
+
+const selectedChildren = computed(() => (customer.value?.children || [])
+  .filter((c) => selectedChildIds.value.includes(c.id)));
+
+const grossTotal = computed(() => (selectedDuration.value?.price || 0) * selectedChildIds.value.length);
+// Mirrors the server: a voucher covers up to its own duration's price, never more than the visit.
+const discount = computed(() => {
+  if (!voucher.value || !selectedDuration.value) return 0;
+  const base = Number(selectedDuration.value.price) || 0;
+  const value = Number(voucher.value.value) || base;
+  return Math.min(value, base);
+});
 
 const selChildrenText = computed(() => {
   if (!customer.value) return '';
@@ -316,6 +390,12 @@ function tokenFromScan(text) {
 async function onScanned(text) {
   scanning.value = false;
   scanError.value = '';
+  // A gift voucher's QR, not a customer card: keep it for the confirm step.
+  if (/\/v\/[A-Za-z0-9_-]{8,}/.test(String(text || ''))) {
+    voucherInput.value = String(text).trim();
+    voucherOpen.value = true;
+    return;
+  }
   const qr = tokenFromScan(text);
   if (!qr) {
     scanError.value = 'qr_err_unknown_code';
@@ -345,9 +425,47 @@ async function selectCustomer(id) {
 }
 
 function changeCustomer() {
+  removeVoucher();
   customer.value = null;
   selectedChildIds.value = [];
   durationMin.value = null;
+}
+
+const VOUCHER_ERRORS = {
+  redeemed: 'vc_err_redeemed', void: 'vc_err_void', expired: 'vc_err_expired',
+};
+
+async function applyVoucher() {
+  const code = voucherInput.value.trim();
+  if (!code || voucherBusy.value) return;
+  voucherBusy.value = true;
+  voucherError.value = '';
+  try {
+    const v = await vouchers.lookup(code);
+    if (v.state !== 'active') {
+      voucherError.value = VOUCHER_ERRORS[v.state] || 'vc_err_notfound';
+      return;
+    }
+    voucher.value = v;
+    voucherChildId.value = selectedChildIds.value[0] || null;
+  } catch {
+    voucherError.value = 'vc_err_notfound';
+  } finally {
+    voucherBusy.value = false;
+  }
+}
+
+function onVoucherScanned(text) {
+  voucherScanning.value = false;
+  voucherInput.value = String(text || '').trim();
+  applyVoucher();
+}
+
+function removeVoucher() {
+  voucher.value = null;
+  voucherInput.value = '';
+  voucherError.value = '';
+  voucherChildId.value = null;
 }
 
 function toggleChild(id) {
@@ -368,20 +486,36 @@ function back() {
 function next() {
   if (!stepValid.value) return;
   if (step.value < 3) step.value += 1;
+  // A voucher scanned back at step 1 is checked as soon as the summary shows.
+  if (step.value === 3 && voucherInput.value && !voucher.value && !voucherError.value) applyVoucher();
 }
 
 async function startPlay() {
   if (starting.value) return;
   starting.value = true;
   try {
+    const childId = selectedChildIds.value.includes(voucherChildId.value)
+      ? voucherChildId.value
+      : selectedChildIds.value[0];
     await sessions.start({
       customer_id: customer.value.id,
       child_ids: selectedChildIds.value,
       duration_minutes: durationMin.value,
+      ...(voucher.value ? { voucher_code: voucher.value.code, voucher_child_id: childId } : {}),
     });
     ui.toast(t('toast_started'), 'success');
     router.push({ name: 'dashboard' });
   } catch (e) {
+    // Someone else redeemed it meanwhile, or it lapsed: say so and drop it.
+    const reason = e?.response?.data?.error?.details?.code;
+    if (voucher.value && (String(reason || '').startsWith('voucher_') || e?.response?.status === 404)) {
+      const key = VOUCHER_ERRORS[String(reason || '').replace('voucher_', '')] || 'vc_err_notfound';
+      removeVoucher();
+      voucherOpen.value = true;
+      voucherError.value = key;
+      ui.toast(t(key), 'error');
+      return;
+    }
     ui.toast(t('error_generic'), 'error');
   } finally {
     starting.value = false;
@@ -802,6 +936,50 @@ onMounted(async () => {
 .summary-total-k { font-weight: 800; font-size: 17px; color: var(--ink); }
 .summary-total-v { font-family: var(--font-head); font-weight: 800; font-size: 24px; color: var(--accent); }
 .confirm-hint { text-align: center; color: var(--muted-3); font-size: 13px; margin-top: 14px; }
+
+/* Gift voucher */
+.scan-ok {
+  margin: 12px 0 0; background: #EAF7F4; color: #0E8C7E;
+  font-weight: 700; font-size: 13px; line-height: 1.5; padding: 10px 14px; border-radius: 12px; max-width: 380px;
+}
+.vc-box { max-width: 460px; margin: 16px auto 0; }
+.vc-open {
+  width: 100%; height: 50px; border: 2px dashed #E4A78E; border-radius: 16px; background: var(--surface);
+  color: var(--accent); font-family: var(--font-body); font-weight: 700; font-size: 15px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+}
+.vc-lbl { font-size: 13px; font-weight: 700; color: var(--muted-strong); margin-bottom: 8px; display: block; }
+.vc-row { display: flex; gap: 8px; }
+.vc-input {
+  flex: 1; min-width: 0; height: 50px; border: 2px solid var(--line-3); border-radius: 14px; background: #fff;
+  padding: 0 14px; font-size: 17px; font-weight: 700; letter-spacing: 1px; color: var(--ink); outline: none;
+  text-transform: uppercase;
+}
+.vc-input:focus { border-color: var(--brand); }
+.vc-apply {
+  height: 50px; padding: 0 18px; border: none; border-radius: 14px; background: var(--ink); color: #fff;
+  font-family: var(--font-body); font-weight: 700; font-size: 15px; cursor: pointer;
+}
+.vc-apply:disabled { opacity: .45; cursor: not-allowed; }
+.vc-scan {
+  width: 50px; height: 50px; flex: none; border: 2px solid var(--line-4); border-radius: 14px; background: #fff;
+  color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+}
+.vc-applied {
+  display: flex; align-items: center; gap: 10px; background: #EAF7F4; color: #0E8C7E;
+  border-radius: 16px; padding: 12px 14px; font-size: 14px;
+}
+.vc-applied-txt { flex: 1; min-width: 0; }
+.vc-remove {
+  border: none; background: none; color: var(--over); font-family: var(--font-body);
+  font-weight: 700; font-size: 13px; cursor: pointer; text-decoration: underline; flex: none;
+}
+.vc-child { margin-top: 12px; }
+.vc-select {
+  width: 100%; height: 48px; border: 2px solid var(--line-3); border-radius: 14px; background: #fff;
+  padding: 0 12px; font-family: var(--font-body); font-size: 15px; color: var(--ink);
+}
+.vc-minus { color: #0E8C7E; }
 
 /* Footer */
 .ss-foot {

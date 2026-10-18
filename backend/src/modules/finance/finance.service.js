@@ -20,7 +20,8 @@ const EXPENSE_COLORS = {
 };
 
 function sessionRevenue(row, durations) {
-  const base = priceForDuration(durations, row.duration_minutes);
+  // A voucher-paid visit was already counted when the voucher was sold.
+  const base = Math.max(0, priceForDuration(durations, row.duration_minutes) - (Number(row.discount) || 0));
   const late = Number(row.late_fee) || 0;
   return { base, late, total: base + late };
 }
@@ -30,7 +31,17 @@ async function completedBetween(tenantId, start, end) {
     .where({ tenant_id: tenantId })
     .andWhere('status', 'completed')
     .andWhereBetween('ended_at', [start, end])
-    .select('id', 'duration_minutes', 'late_fee', 'ended_at', 'child_id', 'customer_id');
+    .select('id', 'duration_minutes', 'late_fee', 'discount', 'ended_at', 'child_id', 'customer_id');
+}
+
+/** Gift vouchers sold in a window — income on the sale day. Cancelled ones were refunded. */
+async function voucherSalesBetween(tenantId, start, end) {
+  return db('vouchers')
+    .where({ tenant_id: tenantId })
+    .whereNot('status', 'void')
+    .andWhere('sold_price', '>', 0)
+    .andWhereBetween('created_at', [start, end])
+    .select('id', 'code', 'sold_price', 'buyer_name', 'recipient_name', 'created_at');
 }
 
 export async function summary(tenantId, period = 'month', lang = 'ar') {
@@ -63,7 +74,10 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
   const workshopRevenue = bookingRows.filter((b) => b.type === 'workshop')
     .reduce((s, b) => s + Number(b.amount), 0);
 
-  const revenue = baseRevenue + lateRevenue + partyRevenue + workshopRevenue;
+  const voucherRows = await voucherSalesBetween(tenantId, start, end);
+  const voucherRevenue = voucherRows.reduce((s, v) => s + Number(v.sold_price), 0);
+
+  const revenue = baseRevenue + lateRevenue + partyRevenue + workshopRevenue + voucherRevenue;
 
   // Weekly bars — trailing 7 days ending today (Riyadh).
   const days = trailingWeekDays();
@@ -90,7 +104,7 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
     .andWhere('s.status', 'completed')
     .orderBy('s.ended_at', 'desc')
     .limit(8)
-    .select('s.id', 's.duration_minutes', 's.late_fee', 's.ended_at', 'ch.name as child_name');
+    .select('s.id', 's.duration_minutes', 's.late_fee', 's.discount', 's.ended_at', 'ch.name as child_name');
   const incomeTxns = recent.map((r) => ({
     io: 'in',
     source: 'play',
@@ -108,6 +122,15 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
     placeholder: false,
   }));
 
+  const voucherTxns = voucherRows.slice(0, 8).map((v) => ({
+    io: 'in',
+    source: 'vouchers',
+    label: [v.buyer_name || v.recipient_name, v.code].filter(Boolean).join(' · '),
+    amount: Number(v.sold_price),
+    at: v.created_at,
+    placeholder: false,
+  }));
+
   const expensesTotal = expenseRows.reduce((sum, e) => sum + Number(e.amount), 0);
   const byCategory = expenseRows.reduce((out, e) => {
     out[e.category] = (out[e.category] || 0) + Number(e.amount);
@@ -120,13 +143,14 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
     id: e.id, io: 'out', label: e.title, category: e.category, amount: Number(e.amount),
     at: e.incurred_at, notes: e.notes, placeholder: false,
   }));
-  const txns = [...incomeTxns, ...bookingTxns, ...expenseTxns]
+  const txns = [...incomeTxns, ...bookingTxns, ...voucherTxns, ...expenseTxns]
     .sort((a, b) => new Date(b.at) - new Date(a.at)).slice(0, 12);
   const revenueBreakdown = [
     { key: 'r_sessions', amount: baseRevenue, color: '#F97A53' },
     { key: 'r_late', amount: lateRevenue, color: '#F5A623' },
     { key: 'r_parties', amount: partyRevenue, color: '#7C5CE0' },
     { key: 'r_workshops', amount: workshopRevenue, color: '#12A594' },
+    { key: 'r_vouchers', amount: voucherRevenue, color: '#EC6A9C' },
   ];
 
   // ---- Revenue-focused headline answers -----------------------------------
@@ -138,6 +162,7 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
   };
   for (const r of rows) addDay(r.ended_at, sessionRevenue(r, durations).total);
   for (const b of bookingRows) addDay(b.starts_at, Number(b.amount));
+  for (const v of voucherRows) addDay(v.created_at, Number(v.sold_price));
   let topRevenueDay = null;
   for (const [date, amount] of dayMap) {
     if (!topRevenueDay || amount > topRevenueDay.amount) topRevenueDay = { date, amount };
@@ -146,11 +171,12 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
   // Best revenue month across the trailing 12 months (rolling, period-agnostic —
   // a "best month" only makes sense over a span longer than the current period).
   const monthFloor = DateTime.now().setZone(ZONE).minus({ months: 11 }).startOf('month').toUTC().toJSDate();
-  const [monthSessions, monthBookings] = await Promise.all([
+  const [monthSessions, monthBookings, monthVouchers] = await Promise.all([
     db('sessions').where({ tenant_id: tenantId }).andWhere('status', 'completed')
-      .andWhere('ended_at', '>=', monthFloor).select('duration_minutes', 'late_fee', 'ended_at'),
+      .andWhere('ended_at', '>=', monthFloor).select('duration_minutes', 'late_fee', 'discount', 'ended_at'),
     db('bookings').where({ tenant_id: tenantId }).whereIn('status', ['confirmed', 'completed'])
       .andWhere('starts_at', '>=', monthFloor).select('amount', 'starts_at'),
+    voucherSalesBetween(tenantId, monthFloor, new Date()),
   ]);
   const monthMap = new Map();
   const addMonth = (at, amt) => {
@@ -159,6 +185,7 @@ export async function summary(tenantId, period = 'month', lang = 'ar') {
   };
   for (const r of monthSessions) addMonth(r.ended_at, sessionRevenue(r, durations).total);
   for (const b of monthBookings) addMonth(b.starts_at, Number(b.amount));
+  for (const v of monthVouchers) addMonth(v.created_at, Number(v.sold_price));
   let topRevenueMonth = null;
   for (const [month, amount] of monthMap) {
     if (!topRevenueMonth || amount > topRevenueMonth.amount) topRevenueMonth = { month, amount };

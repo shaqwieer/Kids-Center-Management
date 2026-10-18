@@ -69,13 +69,13 @@ await send('Runtime.evaluate', {
 
 const ROUTES = [
   '/register', '/', '/team', '/customers', '/settings', '/finance', '/start',
-  '/book', '/bookings', '/insights',
+  '/book', '/bookings', '/insights', '/vouchers',
 ];
 // 360 is the narrowest phone still in real use (Galaxy A-series); if the app
 // survives that, it survives the reported "doesn't open properly on mobiles".
 // The header sheds controls in stages; test just above/below each threshold so
 // a future nav item that breaks one rung is caught rather than "looking fine".
-const WIDTHS = [360, 390, 768, 1024, 1079, 1081, 1149, 1199, 1259, 1339, 1439, 1441, 1920];
+const WIDTHS = [360, 390, 768, 1024, 1079, 1081, 1199, 1201, 1259, 1261, 1359, 1361, 1459, 1461, 1559, 1561, 1920];
 let bad = 0;
 
 for (const width of WIDTHS) {

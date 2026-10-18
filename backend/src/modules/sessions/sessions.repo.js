@@ -6,7 +6,7 @@ const SELECT = [
   's.id', 's.tenant_id', 's.customer_id', 's.child_id',
   's.duration_minutes', 's.started_at', 's.ends_at', 's.ended_at',
   's.status', 's.late_minutes', 's.late_fee', 's.schedule_version', 's.created_at',
-  's.guest_token', 's.guardian_added_minutes',
+  's.guest_token', 's.guardian_added_minutes', 's.voucher_id', 's.discount',
   'c.full_name as customer_full_name', 'c.phone as customer_phone', 'c.customer_code as customer_code',
   // Which language her WhatsApp messages go out in (null = centre default).
   'c.lang as customer_lang',
@@ -78,6 +78,9 @@ export function toSessionDTO(row, settings = null) {
     late_fee: Number(row.late_fee),
     guardian_added_minutes: row.guardian_added_minutes || 0,
     price,
+    // Paid by a gift voucher: `discount` comes off `price` (late fees still apply).
+    voucher_id: row.voucher_id || null,
+    discount: Number(row.discount) || 0,
     currency: settings ? settings.currency : null,
   };
 }

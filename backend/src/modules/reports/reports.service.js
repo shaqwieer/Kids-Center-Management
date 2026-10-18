@@ -40,6 +40,7 @@ const T = {
     late_fee: 'رسوم التأخير',
     price: 'السعر',
     total: 'الإجمالي',
+    voucher: 'خصم القسيمة',
     status: 'الحالة',
     started: 'البداية',
     ended: 'النهاية',
@@ -107,6 +108,7 @@ const T = {
     late_fee: 'Late fee',
     price: 'Price',
     total: 'Total',
+    voucher: 'Voucher discount',
     status: 'Status',
     started: 'Started',
     ended: 'Ended',
@@ -228,7 +230,7 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
       .andWhereBetween('s.started_at', [start, end])
       .orderBy('s.started_at', 'desc')
       .select(
-        's.started_at', 's.ended_at', 's.duration_minutes', 's.late_minutes', 's.late_fee', 's.status',
+        's.started_at', 's.ended_at', 's.duration_minutes', 's.late_minutes', 's.late_fee', 's.status', 's.discount',
         'ch.name as child_name', 'ch.birthdate', 'ch.age', 'ch.has_allergy', 'ch.allergy_note',
         'c.full_name as guardian', 'c.phone', 'c.customer_code',
       );
@@ -248,10 +250,12 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
       { header: t.late_min, key: 'late_min', width: 13 },
       { header: `${t.late_fee} (${money})`, key: 'late_fee', width: 14 },
       { header: `${t.price} (${money})`, key: 'price', width: 12 },
+      { header: `${t.voucher} (${money})`, key: 'voucher', width: 14 },
       { header: `${t.total} (${money})`, key: 'total', width: 13 },
       { header: t.status, key: 'status', width: 12 },
     ], rows.map((r) => {
       const price = priceForDuration(durations, r.duration_minutes);
+      const discount = Number(r.discount) || 0;
       const late = Number(r.late_fee) || 0;
       const played = r.ended_at
         ? Math.max(0, Math.round((new Date(r.ended_at) - new Date(r.started_at)) / 60000))
@@ -272,7 +276,8 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
         late_min: r.late_minutes,
         late_fee: late,
         price,
-        total: price + late,
+        voucher: discount,
+        total: Math.max(0, price - discount) + late,
         status: r.status,
       };
     }), rtl);

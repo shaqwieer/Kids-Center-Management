@@ -49,6 +49,12 @@
               <span class="co-value" dir="ltr">{{ fmtMoney(base) }}</span>
             </div>
 
+            <!-- Paid by a gift voucher at check-in; late fees are still due. -->
+            <div v-if="discount > 0" class="co-fee-row">
+              <span class="co-fee-label">{{ t('vc_discount') }}</span>
+              <span class="co-value co-voucher" dir="ltr">{{ fmtMoney(discount) }}</span>
+            </div>
+
             <div class="co-fee-row co-fee-late">
               <div class="co-late-info">
                 <span class="co-fee-label co-late-title">
@@ -142,7 +148,8 @@ const overMin = computed(() => {
 const base = computed(() => session.value?.price || 0);
 const rate = computed(() => settings.data?.late_fee_per_minute || 0);
 const lateFee = computed(() => overMin.value * rate.value);
-const total = computed(() => base.value + lateFee.value);
+const discount = computed(() => Math.min(session.value?.discount || 0, base.value));
+const total = computed(() => base.value - discount.value + lateFee.value);
 const over = computed(() => overMin.value > 0);
 
 // --- status chip ---
@@ -329,6 +336,7 @@ async function complete() {
   justify-content: space-between;
   align-items: center;
 }
+.co-voucher { color: #0E8C7E; }
 .co-fee-row:first-child {
   padding-bottom: 11px;
 }

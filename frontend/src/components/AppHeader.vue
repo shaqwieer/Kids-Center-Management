@@ -117,6 +117,7 @@ const GROUPS = {
   home: ['dashboard', 'start', 'checkout'],
   customers: ['customers', 'customer'],
   bookings: ['bookings'],
+  vouchers: ['vouchers'],
   finance: ['finance'],
   insights: ['insights'],
   team: ['team'],
@@ -135,6 +136,7 @@ const navItems = computed(() => {
   ];
   if (auth.isManager) {
     items.push(
+      { group: 'vouchers', route: 'vouchers', label: 'nav_vouchers' },
       { group: 'insights', route: 'insights', label: 'nav_insights' },
       { group: 'finance', route: 'finance', label: 'nav_finance' },
       { group: 'team', route: 'team', label: 'nav_team' },
@@ -203,15 +205,17 @@ onBeforeUnmount(() => { document.body.style.overflow = ''; });
   color: var(--ink); cursor: pointer;
 }
 
-/* The header sheds low-value controls as it narrows. A manager now has seven
+/* The header sheds low-value controls as it narrows. A manager now has eight
    nav items with long Arabic labels, so the ladder starts much higher than it
    used to — at 1024px the old thresholds overflowed the row off the LEFT edge
-   (RTL), which is exactly the "doesn't open properly" symptom. */
-@media (max-width: 1440px) { .me-meta { display: none; } }
-@media (max-width: 1340px) { .clock { display: none; } }
-@media (max-width: 1260px) { .reg-lbl { display: none; } .reg { padding: 0 12px; } }
-@media (max-width: 1200px) { .me { display: none; } }
-@media (max-width: 1150px) { .brand-text-hide :deep(.name), .brand-text-hide :deep(.tag) { display: none; } }
+   (RTL), which is exactly the "doesn't open properly" symptom. Every rung
+   moved up when the Vouchers tab arrived: without that, the register label
+   wrapped onto two lines and Log out was pushed off the left edge at ~1150-1200. */
+@media (max-width: 1560px) { .me-meta { display: none; } }
+@media (max-width: 1460px) { .clock { display: none; } }
+@media (max-width: 1360px) { .reg-lbl { display: none; } .reg { padding: 0 12px; } }
+@media (max-width: 1260px) { .me { display: none; } }
+@media (max-width: 1200px) { .brand-text-hide :deep(.name), .brand-text-hide :deep(.tag) { display: none; } }
 
 /* ...and below this the tab row can no longer fit at all, so it becomes a
    drawer. Seven nav items simply do not survive a phone viewport, and squeezing

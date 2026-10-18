@@ -14,6 +14,9 @@ const startSchema = z.object({
   customer_id: z.string().uuid(),
   child_ids: z.array(z.string().uuid()).min(1),
   duration_minutes: z.number().int().positive(),
+  // Optional gift voucher (short code, token or scanned URL) paying for one child.
+  voucher_code: z.string().trim().min(4).max(200).optional().nullable(),
+  voucher_child_id: z.string().uuid().optional().nullable(),
 });
 
 const addTimeSchema = z.object({
@@ -36,6 +39,8 @@ router.post('/', validate(startSchema), asyncHandler(async (req, res) => {
     customerId: req.body.customer_id,
     childIds: req.body.child_ids,
     durationMinutes: req.body.duration_minutes,
+    voucherCode: req.body.voucher_code || null,
+    voucherChildId: req.body.voucher_child_id || null,
   });
   res.status(201).json({ sessions });
 }));

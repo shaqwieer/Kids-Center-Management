@@ -13,6 +13,7 @@ import bookingsRoutes from './modules/bookings/bookings.routes.js';
 import reviewsRoutes from './modules/reviews/reviews.routes.js';
 import analyticsRoutes from './modules/analytics/analytics.routes.js';
 import reportsRoutes from './modules/reports/reports.routes.js';
+import vouchersRoutes from './modules/vouchers/vouchers.routes.js';
 
 const api = Router();
 
@@ -31,5 +32,6 @@ api.use('/bookings', bookingsRoutes);
 api.use('/reviews', reviewsRoutes);
 api.use('/analytics', analyticsRoutes);
 api.use('/reports', reportsRoutes);
+api.use('/vouchers', vouchersRoutes);
 
 export default api;
