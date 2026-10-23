@@ -142,7 +142,7 @@
           <template v-else>
             <div v-for="m in d.duration_mix" :key="m.minutes" class="row">
               <div class="row-top">
-                <span class="row-lbl">{{ m.minutes }} {{ t('mins') }}</span>
+                <span class="row-lbl">{{ mixLabel(m.minutes) }}</span>
                 <span class="row-val" dir="ltr">{{ m.count }}</span>
               </div>
               <div class="track"><div class="fill" :style="{ width: `${pct(m.count, maxDuration)}%`, background: 'var(--brand)' }"></div></div>
@@ -226,6 +226,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useInsightsStore } from '@/stores/insights.js';
 import { useUiStore } from '@/stores/ui.js';
+import { durationKey } from '@/lib/time.js';
 
 const { t } = useI18n();
 const store = useInsightsStore();
@@ -253,6 +254,11 @@ const shortDay = (label) => (label.length > 6 ? label.slice(0, 5) : label);
 const maxWeekday = computed(() => Math.max(0, ...(d.value?.by_weekday || []).map((w) => w.count)));
 const maxHour = computed(() => Math.max(0, ...(d.value?.by_hour || []).map((h) => h.count)));
 const maxTrend = computed(() => Math.max(0, ...(d.value?.trend.series || []).map((m) => m.revenue)));
+function mixLabel(min) {
+  const k = durationKey(min);
+  return k ? t(k) : `${min} ${t('mins')}`;
+}
+
 const maxDuration = computed(() => Math.max(0, ...(d.value?.duration_mix || []).map((m) => m.count)));
 const maxAge = computed(() => Math.max(0, ...(d.value?.age_bands || []).map((b) => b.count)));
 const totalIncome = computed(() => (d.value?.income_sources || []).reduce((s, x) => s + x.amount, 0));

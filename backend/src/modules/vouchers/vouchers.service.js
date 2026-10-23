@@ -11,7 +11,7 @@ import { db } from '../../config/db.js';
 import { env } from '../../config/env.js';
 import { ApiError } from '../../utils/http.js';
 import { makeQrToken } from '../../utils/codes.js';
-import { priceForDuration } from '../../lib/timing.js';
+import { priceForDuration, isSellableDuration } from '../../lib/timing.js';
 import { ZONE } from '../../utils/time.js';
 import { getSettings } from '../settings/settings.service.js';
 
@@ -105,8 +105,9 @@ export async function listVouchers(tenantId, { state } = {}) {
 
 export async function createVouchers(tenantId, userId, body) {
   const settings = await getSettings(tenantId);
-  const allowed = (settings.durations || []).some((d) => Number(d.min) === Number(body.duration_minutes));
-  if (!allowed) throw ApiError.badRequest('Duration is not allowed by settings', { durationMinutes: body.duration_minutes });
+  if (!isSellableDuration(settings.durations, body.duration_minutes)) {
+    throw ApiError.badRequest('Duration is not allowed by settings', { durationMinutes: body.duration_minutes });
+  }
   if (body.expires_on && body.expires_on < riyadhToday()) {
     throw ApiError.badRequest('Expiry date is in the past');
   }

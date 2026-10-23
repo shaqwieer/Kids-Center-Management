@@ -10,7 +10,7 @@ import ExcelJS from 'exceljs';
 import { DateTime } from 'luxon';
 import { db } from '../../config/db.js';
 import { ZONE } from '../../utils/time.js';
-import { priceForDuration } from '../../lib/timing.js';
+import { priceForDuration, isOpenPlay } from '../../lib/timing.js';
 import { getSettings } from '../settings/settings.service.js';
 import { insights } from '../analytics/analytics.service.js';
 
@@ -35,6 +35,7 @@ const T = {
     phone: 'الجوال',
     code: 'الرمز',
     duration: 'المدة (دقيقة)',
+    open_play: 'لعب مفتوح',
     played: 'اللعب الفعلي (دقيقة)',
     late_min: 'دقائق التأخير',
     late_fee: 'رسوم التأخير',
@@ -104,6 +105,7 @@ const T = {
     phone: 'Phone',
     code: 'Code',
     duration: 'Duration (min)',
+    open_play: 'Open play',
     played: 'Actually played (min)',
     late_min: 'Late minutes',
     late_fee: 'Late fee',
@@ -274,7 +276,7 @@ export async function buildReport(tenantId, { type = 'full', start, end, lang = 
         allergy: r.has_allergy ? t.yes : t.no,
         allergy_note: r.allergy_note || '',
         code: r.customer_code,
-        duration: r.duration_minutes,
+        duration: isOpenPlay(r.duration_minutes) ? t.open_play : r.duration_minutes,
         played,
         late_min: r.late_minutes,
         late_fee: late,

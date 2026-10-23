@@ -19,7 +19,9 @@
           <div class="sec-hint">{{ t('se_durations_hint') }}</div>
 
           <div class="dur-list">
-            <div v-for="d in form.durations" :key="d.min" class="dur-row">
+            <!-- Retired tiers aren't sold any more; they stay in form.durations
+                 (and so survive a save) only to keep pricing their past visits. -->
+            <div v-for="d in form.durations.filter((x) => !x.retired)" :key="d.min" class="dur-row">
               <div class="dur-label">{{ durationLabel(d.min) }}</div>
               <div class="num-field" dir="ltr">
                 <input class="num-input" type="number" min="0" v-model="d.price" />
@@ -319,6 +321,7 @@ import BrandLogo from '@/components/BrandLogo.vue';
 import { useSettingsStore } from '@/stores/settings.js';
 import { useAuthStore } from '@/stores/auth.js';
 import { useUiStore } from '@/stores/ui.js';
+import { durationKey } from '@/lib/time.js';
 
 const { t } = useI18n();
 const settings = useSettingsStore();
@@ -408,10 +411,8 @@ const parseSlots = (text) => String(text || '')
   .map((s) => (s.length === 4 ? `0${s}` : s));
 
 function durationLabel(min) {
-  if (min === 30) return t('dur30');
-  if (min === 60) return t('dur60');
-  if (min === 120) return t('dur120');
-  return `${min} ${t('mins')}`;
+  const k = durationKey(min);
+  return k ? t(k) : `${min} ${t('mins')}`;
 }
 
 onMounted(async () => {

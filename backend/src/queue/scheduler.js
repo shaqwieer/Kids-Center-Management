@@ -30,6 +30,9 @@ export const bookingConfirmedJobId = (bookingId) => `bkconf-${bookingId}`;
  * @param {{sessionId:string, tenantId:string, tenantSlug:string, endsAtMs:number, version:number, nowMs?:number}} p
  */
 export async function scheduleJobs({ sessionId, tenantId, tenantSlug, endsAtMs, version, nowMs = Date.now() }) {
+  // Open play has no end. A null here would read as 1970 and fire time_up — a
+  // real WhatsApp to the mother — the instant it was queued.
+  if (endsAtMs == null || !Number.isFinite(endsAtMs)) return;
   const { warn5, timeup } = computeDelays(nowMs, endsAtMs);
   const common = { sessionId, tenantId, tenantSlug, version, endsAt: endsAtMs };
 

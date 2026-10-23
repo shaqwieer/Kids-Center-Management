@@ -156,7 +156,8 @@ export async function getCustomerDetail(tenantId, id) {
       played_minutes: playedMinutes,
       late_minutes: v.late_minutes,
       late_fee: Number(v.late_fee),
-      over: playedMinutes > v.duration_minutes,
+      // Open play (0) has no booked length to run over.
+      over: v.duration_minutes > 0 && playedMinutes > v.duration_minutes,
     };
   });
 

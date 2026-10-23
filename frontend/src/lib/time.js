@@ -6,12 +6,24 @@
 export const ZONE = 'Asia/Riyadh';
 const WARN_MS = 5 * 60_000;
 
+/**
+ * Open play: duration_minutes 0 and no `ends_at` — the child plays until
+ * checkout. It never warns, never runs over, and counts UP instead of down.
+ */
+export const OPEN_PLAY_MIN = 0;
+export function isOpenPlay(min) {
+  return min != null && Number(min) === OPEN_PLAY_MIN;
+}
+
 export function remainingMs(endsAt, now = Date.now()) {
+  // No end (open play) — never closer to time-up than any timed session.
+  if (!endsAt) return Infinity;
   return new Date(endsAt).getTime() - now;
 }
 
 /** playing | warning | overtime — derived from remaining time. */
 export function liveState(endsAt, now = Date.now()) {
+  if (!endsAt) return 'playing';
   const r = remainingMs(endsAt, now);
   if (r <= 0) return 'overtime';
   if (r <= WARN_MS) return 'warning';
@@ -39,8 +51,14 @@ export function countdown(endsAt, now = Date.now()) {
   };
 }
 
+/** Time played so far, same shape as countdown() — the open-play counter. */
+export function elapsed(startedAt, now = Date.now()) {
+  return countdown(now, new Date(startedAt).getTime());
+}
+
 /** Fraction of time remaining (0..1) for the progress ring. */
 export function progressFraction(startedAt, endsAt, now = Date.now()) {
+  if (!endsAt) return 1;
   const total = new Date(endsAt).getTime() - new Date(startedAt).getTime();
   if (total <= 0) return 0;
   const rem = new Date(endsAt).getTime() - now;
@@ -134,6 +152,7 @@ export function slotLabel(startsAt, endsAt, lang = 'ar') {
 
 /** Duration label (30 -> "30 min"/"٣٠ دقيقة", etc.) via i18n keys. */
 export function durationKey(min) {
+  if (isOpenPlay(min)) return 'dur_open';
   if (min === 30) return 'dur30';
   if (min === 60) return 'dur60';
   if (min === 120) return 'dur120';

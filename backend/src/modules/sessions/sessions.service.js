@@ -8,7 +8,9 @@
 import { db } from '../../config/db.js';
 import { ApiError } from '../../utils/http.js';
 import { env } from '../../config/env.js';
-import { computeEndsAt, computeLate, deriveLiveState, priceForDuration, MINUTE_MS } from '../../lib/timing.js';
+import {
+  computeEndsAt, computeLate, deriveLiveState, priceForDuration, isOpenPlay, isSellableDuration, MINUTE_MS,
+} from '../../lib/timing.js';
 import { getSettings } from '../settings/settings.service.js';
 import { emitToTenant } from '../../realtime/emitter.js';
 import { scheduleJobs, removeJobs, scheduleReview } from '../../queue/scheduler.js';
@@ -52,8 +54,9 @@ export async function startSessions({
   const settings = await getSettings(tenantId);
   const durView = { durations: settings.durations, currency: settings.currency };
 
-  const allowed = (settings.durations || []).some((d) => Number(d.min) === Number(durationMinutes));
-  if (!allowed) throw ApiError.badRequest('Duration is not allowed by settings', { durationMinutes });
+  if (!isSellableDuration(settings.durations, durationMinutes)) {
+    throw ApiError.badRequest('Duration is not allowed by settings', { durationMinutes });
+  }
 
   if (!Array.isArray(childIds) || childIds.length === 0) {
     throw ApiError.badRequest('At least one child is required');
@@ -72,9 +75,11 @@ export async function startSessions({
   }
 
   const nowMs = Date.now();
-  const endsAtMs = computeEndsAt(nowMs, durationMinutes);
+  // Open play runs until checkout: no end time, so nothing to warn about.
+  const open = isOpenPlay(durationMinutes);
+  const endsAtMs = open ? null : computeEndsAt(nowMs, durationMinutes);
   const startedAt = new Date(nowMs);
-  const endsAt = new Date(endsAtMs);
+  const endsAt = open ? null : new Date(endsAtMs);
   const basePrice = priceForDuration(settings.durations, durationMinutes);
 
   const ids = await db.transaction(async (trx) => {
@@ -117,8 +122,10 @@ export async function startSessions({
   for (const id of ids) {
     // eslint-disable-next-line no-await-in-loop
     const row = await getSessionRow(id);
-    // eslint-disable-next-line no-await-in-loop
-    await scheduleJobs({ sessionId: row.id, tenantId, tenantSlug, endsAtMs, version: 1, nowMs });
+    if (!open) {
+      // eslint-disable-next-line no-await-in-loop
+      await scheduleJobs({ sessionId: row.id, tenantId, tenantSlug, endsAtMs, version: 1, nowMs });
+    }
     const dto = toSessionDTO(row, durView);
     emitToTenant(tenantSlug, 'session:created', { session: dto });
     created.push(dto);
@@ -136,6 +143,7 @@ export async function addTime({ tenantId, tenantSlug, sessionId, minutes, by = '
   const row = await getSessionRow(sessionId);
   if (!row || row.tenant_id !== tenantId) throw ApiError.notFound('Session not found');
   if (row.status === 'completed') throw ApiError.badRequest('Session already completed');
+  if (isOpenPlay(row.duration_minutes)) throw ApiError.badRequest('Open play has no end time to extend');
   if (!minutes || minutes <= 0) throw ApiError.badRequest('minutes must be positive');
 
   const settings = await loadSettingsView(tenantId);
@@ -172,7 +180,7 @@ export async function endSession({ tenantId, tenantSlug, sessionId }) {
   }
 
   const endedMs = Date.now();
-  const endsMs = new Date(row.ends_at).getTime();
+  const endsMs = row.ends_at ? new Date(row.ends_at).getTime() : null;
   const { lateMinutes, lateFee } = computeLate(endsMs, endedMs, settings.late_fee_per_minute);
   const newVersion = row.schedule_version + 1; // invalidate any pending job
 
@@ -240,7 +248,8 @@ export async function getGuestSession(token) {
     ends_at: row.ends_at instanceof Date ? row.ends_at.toISOString() : row.ends_at,
     status: row.status,
     completed: row.status === 'completed',
-    extend_enabled: Boolean(settings.guardian_extend_enabled) && row.status !== 'completed',
+    extend_enabled: Boolean(settings.guardian_extend_enabled) && row.status !== 'completed'
+      && !isOpenPlay(row.duration_minutes),
     extend_minutes: extendMinutes,
     // What the extension will cost, using the same duration price list as reception.
     extend_price: priceForDuration(settings.durations, extendMinutes),

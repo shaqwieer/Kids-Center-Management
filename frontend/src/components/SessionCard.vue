@@ -27,7 +27,7 @@
     <div class="ring-wrap" :class="{ 'is-over': isOvertime }" :style="{ '--glow': s.color }">
       <ProgressRing :frac="ringFrac" :color="s.color" :size="134">
         <div class="cd" :style="{ color: s.color, fontSize: cdSize + 'px' }" dir="ltr">{{ cd.sign }}{{ cd.text }}</div>
-        <div class="cd-cap">{{ cd.over ? t('late') : t('timeleft') }}</div>
+        <div class="cd-cap">{{ open ? t('played_time') : cd.over ? t('late') : t('timeleft') }}</div>
       </ProgressRing>
     </div>
 
@@ -43,7 +43,8 @@
     </div>
 
     <div class="actions">
-      <button class="btn ghost" @click="onAddTime">＋ {{ t('add_time') }}</button>
+      <!-- Open play has no end to push back. -->
+      <button v-if="!open" class="btn ghost" @click="onAddTime">＋ {{ t('add_time') }}</button>
       <button class="btn end" :style="{ background: endBg }" @click="onEnd">{{ t('end_session') }}</button>
     </div>
   </div>
@@ -57,7 +58,9 @@ import ProgressRing from '@/components/ProgressRing.vue';
 import { useSessionsStore } from '@/stores/sessions.js';
 import { useUiStore } from '@/stores/ui.js';
 import { avatarColor, initial, STATE_STYLES } from '@/lib/colors.js';
-import { liveState, countdown, progressFraction, formatTime, durationKey } from '@/lib/time.js';
+import {
+  liveState, countdown, elapsed, progressFraction, formatTime, durationKey, isOpenPlay,
+} from '@/lib/time.js';
 
 const props = defineProps({ session: { type: Object, required: true } });
 
@@ -66,9 +69,13 @@ const router = useRouter();
 const sessions = useSessionsStore();
 const ui = useUiStore();
 
+// Open play never ends on its own: it stays "playing" and counts up.
+const open = computed(() => isOpenPlay(props.session.duration_minutes));
 const state = computed(() => liveState(props.session.ends_at, sessions.now));
 const s = computed(() => STATE_STYLES[state.value]);
-const cd = computed(() => countdown(props.session.ends_at, sessions.now));
+const cd = computed(() => (open.value
+  ? elapsed(props.session.started_at, sessions.now)
+  : countdown(props.session.ends_at, sessions.now)));
 const frac = computed(() => progressFraction(props.session.started_at, props.session.ends_at, sessions.now));
 
 const isOvertime = computed(() => state.value === 'overtime');
@@ -89,6 +96,7 @@ const child = computed(() => props.session.child.name);
 const mother = computed(() => props.session.customer.full_name);
 
 const stateLabel = computed(() => {
+  if (open.value) return t('dur_open');
   if (state.value === 'warning') return t('st_warning');
   if (state.value === 'overtime') return t('st_overtime');
   return t('st_playing');

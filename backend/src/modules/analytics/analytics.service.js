@@ -9,7 +9,7 @@
 import { DateTime } from 'luxon';
 import { db } from '../../config/db.js';
 import { ZONE, periodRange } from '../../utils/time.js';
-import { priceForDuration } from '../../lib/timing.js';
+import { priceForDuration, isOpenPlay } from '../../lib/timing.js';
 import { getSettings } from '../settings/settings.service.js';
 
 const DAY_LABELS = {
@@ -149,8 +149,12 @@ export async function insights(tenantId, { period = 'month', lang = 'ar' } = {})
     .andWhereBetween('ended_at', [start, end])
     .select('duration_minutes', 'late_fee', 'discount', 'started_at', 'ended_at', 'customer_id', 'child_id');
 
+  // Open play books no length, so it counts with the time actually played.
+  const bookedMinutes = (r) => (isOpenPlay(r.duration_minutes)
+    ? Math.max(0, (new Date(r.ended_at) - new Date(r.started_at)) / 60000)
+    : r.duration_minutes);
   const avgDuration = periodSessions.length
-    ? Math.round(periodSessions.reduce((s, r) => s + r.duration_minutes, 0) / periodSessions.length)
+    ? Math.round(periodSessions.reduce((s, r) => s + bookedMinutes(r), 0) / periodSessions.length)
     : 0;
 
   const avgPlayed = periodSessions.length
@@ -184,12 +188,15 @@ export async function insights(tenantId, { period = 'month', lang = 'ar' } = {})
     ? Math.round((repeaters / visitCounts.length) * 100)
     : 0;
 
-  // Which duration the centre actually sells.
+  // Which duration the centre actually sells. A retired tier only shows while
+  // the period still has visits sold under it.
   const durationMix = (durations || []).map((d) => ({
     minutes: Number(d.min),
     price: Number(d.price),
     count: periodSessions.filter((r) => r.duration_minutes === Number(d.min)).length,
-  })).sort((a, b) => b.count - a.count);
+    retired: Boolean(d.retired),
+  })).filter((m) => !m.retired || m.count > 0)
+    .sort((a, b) => b.count - a.count);
 
   // Income by source — play time vs parties vs workshops.
   const sessionRevenue = periodSessions.reduce((s, r) => s + playRevenue(r, durations), 0);

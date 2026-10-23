@@ -2,7 +2,8 @@
 import { db } from '../../config/db.js';
 
 const DEFAULTS = {
-  durations: [{ min: 30, price: 25 }, { min: 60, price: 40 }, { min: 120, price: 70 }],
+  // min 0 = open play: no fixed length, the child plays until checkout.
+  durations: [{ min: 30, price: 25 }, { min: 60, price: 40 }, { min: 0, price: 70 }],
   late_fee_per_minute: 0,
   center_name: 'Blend Play & Sip',
   tagline: '',

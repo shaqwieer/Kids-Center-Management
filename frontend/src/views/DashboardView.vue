@@ -67,7 +67,16 @@ const buckets = computed(() => {
   const now = sessions.now;
   const out = { playing: [], warning: [], overtime: [] };
   for (const s of sessions.list) out[liveState(s.ends_at, now)].push(s);
-  const byRemaining = (a, b) => remainingMs(a.ends_at, now) - remainingMs(b.ends_at, now);
+  // Open play (no ends_at) never moves columns; it sits after the timed cards,
+  // longest-playing first. Infinity - Infinity is NaN, so compare it apart.
+  const byRemaining = (a, b) => {
+    if (!a.ends_at || !b.ends_at) {
+      if (a.ends_at) return -1;
+      if (b.ends_at) return 1;
+      return new Date(a.started_at) - new Date(b.started_at);
+    }
+    return remainingMs(a.ends_at, now) - remainingMs(b.ends_at, now);
+  };
   out.playing.sort(byRemaining);
   out.warning.sort(byRemaining);
   out.overtime.sort(byRemaining);

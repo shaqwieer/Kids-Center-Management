@@ -11,7 +11,7 @@ const router = Router();
 router.use(requireAuth);
 
 const createSchema = z.object({
-  duration_minutes: z.number().int().positive(),
+  duration_minutes: z.number().int().nonnegative(), // 0 = open play
   sold_price: z.coerce.number().min(0).max(9999999999.99).optional(),
   quantity: z.number().int().min(1).max(50).optional(),
   recipient_name: z.string().trim().max(120).optional().nullable(),

@@ -261,7 +261,7 @@ import { useCustomersStore } from '@/stores/customers.js';
 import { useSettingsStore } from '@/stores/settings.js';
 import { useUiStore } from '@/stores/ui.js';
 import { avatarColor, initial } from '@/lib/colors.js';
-import { money, durationKey } from '@/lib/time.js';
+import { money, durationKey, isOpenPlay } from '@/lib/time.js';
 import QrScanner from '@/components/QrScanner.vue';
 import { useVouchersStore } from '@/stores/vouchers.js';
 
@@ -313,7 +313,8 @@ const steps = computed(() =>
 );
 
 const currency = computed(() => settings.data?.currency || 'SAR');
-const durations = computed(() => settings.data?.durations || []);
+// Retired tiers stay in settings only to keep pricing their past visits.
+const durations = computed(() => (settings.data?.durations || []).filter((d) => !d.retired));
 const selectedDuration = computed(() => durations.value.find((d) => d.min === durationMin.value) || null);
 
 const noResults = computed(() => searched.value && search.value.trim() !== '' && results.value.length === 0);
@@ -350,6 +351,7 @@ function durLabel(min) {
   return k ? t(k) : `${min} ${t('mins')}`;
 }
 function durSub(min) {
+  if (isOpenPlay(min)) return t('ss_open_sub');
   if (min === 30) return t('ss_quick');
   if (min === 60) return t('ss_most_popular');
   if (min === 120) return t('ss_halfday');

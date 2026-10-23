@@ -8,6 +8,26 @@
 export const MINUTE_MS = 60_000;
 export const WARN_LEAD_MIN = 5; // "5 minutes left" warning lead time
 
+/**
+ * "Open play" — no fixed length: the child plays until reception checks her
+ * out. Stored as duration_minutes = 0 with a null ends_at, so it has no
+ * warn/time-up jobs, no overtime and no late fee. Priced like any other tier.
+ */
+export const OPEN_PLAY_MIN = 0;
+
+export function isOpenPlay(durationMin) {
+  return durationMin != null && Number(durationMin) === OPEN_PLAY_MIN; // Number(null) is 0
+}
+
+/**
+ * Can reception sell this duration today? A `retired` tier is no longer
+ * offered, but stays in the list so its past visits keep their price (revenue
+ * is re-derived from duration_minutes).
+ */
+export function isSellableDuration(durations, durationMin) {
+  return (durations || []).some((d) => !d.retired && Number(d.min) === Number(durationMin));
+}
+
 /** End timestamp for a session that starts at `startAtMs` and runs `durationMin`. */
 export function computeEndsAt(startAtMs, durationMin) {
   return startAtMs + Math.round(durationMin) * MINUTE_MS;
@@ -32,6 +52,8 @@ export function computeDelays(nowMs, endsAtMs, warnLeadMin = WARN_LEAD_MIN) {
  * ratePerMin = 0 disables late fees (returns 0).
  */
 export function computeLate(endsAtMs, endedAtMs, ratePerMin = 0) {
+  // Open play has no end to be late for.
+  if (endsAtMs == null) return { lateMinutes: 0, lateFee: 0 };
   const overMs = endedAtMs - endsAtMs;
   const lateMinutes = overMs > 0 ? Math.ceil(overMs / MINUTE_MS) : 0;
   const rate = Number(ratePerMin) || 0;

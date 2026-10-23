@@ -45,7 +45,13 @@ const bookingKind = z.object({
 }).partial();
 
 const updateSchema = z.object({
-  durations: z.array(z.object({ min: z.number().int().positive(), price: z.number().nonnegative() })).optional(),
+  // min 0 = open play. `retired` tiers are no longer sold but keep pricing their
+  // past visits — they must survive a save, or history would drop to 0.
+  durations: z.array(z.object({
+    min: z.number().int().nonnegative(),
+    price: z.number().nonnegative(),
+    retired: z.boolean().optional(),
+  })).optional(),
   late_fee_per_minute: z.number().nonnegative().optional(),
   center_name: z.string().min(1).optional(),
   tagline: z.string().optional(),

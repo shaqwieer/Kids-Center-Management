@@ -178,7 +178,10 @@ exports.seed = async function seed(knex) {
 
   await knex('settings').insert({
     tenant_id: tenant.id,
-    durations: JSON.stringify([{ min: 30, price: 25 }, { min: 60, price: 40 }, { min: 120, price: 70 }]),
+    // 120 is retired (the demo history still has 2-hour visits); 0 = open play.
+    durations: JSON.stringify([
+      { min: 30, price: 25 }, { min: 60, price: 40 }, { min: 120, price: 70, retired: true }, { min: 0, price: 70 },
+    ]),
     late_fee_per_minute: 1.5,
     center_name: 'Blend Play & Sip',
     tagline: '',

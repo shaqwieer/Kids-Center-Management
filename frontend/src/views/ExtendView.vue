@@ -27,7 +27,7 @@
         <div class="kid-line center">{{ s.child_name }}</div>
 
         <!-- Live countdown, derived only from the server's ends_at. -->
-        <div v-if="!s.completed" class="count" :class="{ over: remainingMs <= 0 }">
+        <div v-if="!s.completed && s.ends_at" class="count" :class="{ over: remainingMs <= 0 }">
           <div class="count-lbl">{{ remainingMs > 0 ? t('gx_remaining') : t('gx_ended') }}</div>
           <div class="count-val" dir="ltr">{{ countdown }}</div>
         </div>

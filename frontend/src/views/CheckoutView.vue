@@ -55,7 +55,8 @@
               <span class="co-value co-voucher" dir="ltr">{{ fmtMoney(discount) }}</span>
             </div>
 
-            <div class="co-fee-row co-fee-late">
+            <!-- Open play has no end time, so nothing can run late. -->
+            <div v-if="!open" class="co-fee-row co-fee-late">
               <div class="co-late-info">
                 <span class="co-fee-label co-late-title">
                   {{ t('co_late_fee') }}
@@ -102,7 +103,7 @@ import { useSessionsStore } from '@/stores/sessions.js';
 import { useSettingsStore } from '@/stores/settings.js';
 import { useUiStore } from '@/stores/ui.js';
 import { avatarColor, initial } from '@/lib/colors.js';
-import { formatTime, money, durationKey } from '@/lib/time.js';
+import { formatTime, money, durationKey, isOpenPlay } from '@/lib/time.js';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -134,14 +135,15 @@ const motherName = computed(() => session.value?.customer?.full_name || '');
 
 // --- live preview, derived from sessions.now (ticks every 1s) ---
 const startedMs = computed(() => (session.value ? new Date(session.value.started_at).getTime() : 0));
-const endsMs = computed(() => (session.value ? new Date(session.value.ends_at).getTime() : 0));
+const open = computed(() => isOpenPlay(session.value?.duration_minutes));
+const endsMs = computed(() => (session.value?.ends_at ? new Date(session.value.ends_at).getTime() : 0));
 
 const playedMin = computed(() => {
   if (!session.value) return 0;
   return Math.max(1, Math.ceil((sessions.now - startedMs.value) / 60000));
 });
 const overMin = computed(() => {
-  if (!session.value) return 0;
+  if (!session.value || open.value) return 0;
   return Math.max(0, Math.ceil((sessions.now - endsMs.value) / 60000));
 });
 
@@ -155,9 +157,10 @@ const over = computed(() => overMin.value > 0);
 // --- status chip ---
 const statusColor = computed(() => (over.value ? '#E5484D' : '#0E8C7E'));
 const statusBg = computed(() => (over.value ? '#FEEDEC' : '#EAF7F4'));
-const statusText = computed(() =>
-  over.value ? `${t('co_over_by')} ${overMin.value} ${t('mins')}` : t('co_ontime'),
-);
+const statusText = computed(() => {
+  if (open.value) return t('dur_open');
+  return over.value ? `${t('co_over_by')} ${overMin.value} ${t('mins')}` : t('co_ontime');
+});
 
 // --- labels ---
 const durationLabel = computed(() => {

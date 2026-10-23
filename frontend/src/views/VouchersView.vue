@@ -136,7 +136,8 @@ const doomed = ref(null); // voucher awaiting cancel confirmation
 
 const todayIso = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Riyadh' });
 const currency = computed(() => settings.data?.currency || 'SAR');
-const durations = computed(() => settings.data?.durations || []);
+// Retired tiers stay in settings only to keep pricing their past visits.
+const durations = computed(() => (settings.data?.durations || []).filter((d) => !d.retired));
 
 const blank = () => ({
   duration_minutes: null, sold_price: 0, quantity: 1,
@@ -148,7 +149,7 @@ const shown = computed(() => (filter.value === 'all' ? store.list : store.list.f
 const countOf = (f) => (f === 'all' ? store.list.length : store.list.filter((v) => v.state === f).length);
 
 const canCreate = computed(() => Boolean(
-  form.value.duration_minutes
+  form.value.duration_minutes != null // 0 = open play
   && Number(form.value.sold_price) >= 0
   && form.value.quantity >= 1 && form.value.quantity <= 50,
 ));

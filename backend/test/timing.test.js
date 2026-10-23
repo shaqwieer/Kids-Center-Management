@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   computeEndsAt, computeDelays, computeLate, deriveLiveState, priceForDuration, MINUTE_MS,
+  isOpenPlay, isSellableDuration,
 } from '../src/lib/timing.js';
 
 test('computeEndsAt adds duration in minutes', () => {
@@ -78,4 +79,23 @@ test('priceForDuration maps duration to price', () => {
   const durations = [{ min: 30, price: 25 }, { min: 60, price: 40 }, { min: 120, price: 70 }];
   assert.equal(priceForDuration(durations, 60), 40);
   assert.equal(priceForDuration(durations, 999), 0);
+});
+
+test('open play (0) is priced like any tier but has no end to be late for', () => {
+  const durations = [{ min: 30, price: 55 }, { min: 60, price: 75 }, { min: 0, price: 115 }];
+  assert.ok(isOpenPlay(0));
+  assert.ok(!isOpenPlay(60));
+  assert.ok(!isOpenPlay(null));
+  assert.equal(priceForDuration(durations, 0), 115);
+  // Ended hours later: still no late minutes, no fee.
+  assert.deepEqual(computeLate(null, Date.now(), 1.5), { lateMinutes: 0, lateFee: 0 });
+});
+
+test('a retired tier keeps its price but can no longer be sold', () => {
+  const durations = [{ min: 60, price: 75 }, { min: 120, price: 115, retired: true }, { min: 0, price: 115 }];
+  assert.equal(priceForDuration(durations, 120), 115); // past 2-hour visits keep their revenue
+  assert.ok(!isSellableDuration(durations, 120));
+  assert.ok(isSellableDuration(durations, 60));
+  assert.ok(isSellableDuration(durations, 0));
+  assert.ok(!isSellableDuration(durations, 45));
 });
